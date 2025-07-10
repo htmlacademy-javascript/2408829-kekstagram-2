@@ -10,6 +10,6 @@ function isPalindrome(str) {
   return normalized === reversed;
 }
 console.log(isStringLengthValid('проверяемая строка', 20));
-console.log(isStringLengthValid('проверяемая строка', 20));
+console.log(isStringLengthValid('проверяемая строка', 10));
 console.log(isPalindrome('топот')); 
 console.log(isPalindrome('Кекс')); 
