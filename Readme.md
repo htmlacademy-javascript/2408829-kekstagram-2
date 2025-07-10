@@ -1,7 +1,7 @@
 # Личный проект «Кекстаграм»
 
 * Студент: [Миша Дербилов](https://up.htmlacademy.ru/javascript-individual/2/user/2408829).
-* Наставник: `Неизвестно`.
+* Наставник: [Анна Лисененкова](https://htmlacademy.ru/profile/ankhena).
 
 ---
 
