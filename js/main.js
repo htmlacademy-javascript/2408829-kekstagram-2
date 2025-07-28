@@ -60,3 +60,6 @@ function generatePhotoDescriptions() {
 
   return photoDescriptions;
 }
+
+const photos = generatePhotoDescriptions();
+console.log(photos);
