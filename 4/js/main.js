@@ -60,7 +60,3 @@ function generatePhotoDescriptions() {
 
   return photoDescriptions;
 }
-
-// Использование
-const photos = generatePhotoDescriptions();
-console.log(photos);
