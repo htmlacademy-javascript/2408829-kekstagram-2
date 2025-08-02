@@ -1,6 +1,10 @@
-import { getRandomInt, getRandomArrayItem, generateUniqueId } from './util.js';
+import {
+  getRandomInt,
+  getRandomArrayItem,
+  generateUniqueId
+} from './utilities.js';
 
-const messages = [
+const MESSAGES = [
   'Всё отлично!',
   'В целом всё неплохо. Но не всё.',
   'Когда вы делаете фотографию, хорошо бы убирать палец из кадра. В конце концов это просто непрофессионально.',
@@ -9,14 +13,14 @@ const messages = [
   'Лица у людей на фотке перекошены, как будто их избивают. Как можно было поймать такой неудачный момент?!'
 ];
 
-const names = ['Артём', 'Ольга', 'Сергей', 'Мария', 'Иван', 'Елена', 'Дмитрий', 'Наталья', 'Алексей', 'Юлия'];
+const NAMES = ['Артём', 'Ольга', 'Сергей', 'Мария', 'Иван', 'Елена', 'Дмитрий', 'Наталья', 'Алексей', 'Юлия'];
 
-function generateComment(usedCommentIds) {
+const generateSingleComment = (usedCommentIds) => {
   const id = generateUniqueId(usedCommentIds);
   const avatar = `img/avatar-${getRandomInt(1, 6)}.svg`;
   const messageCount = getRandomInt(1, 2);
-  const message = Array.from({ length: messageCount }, () => getRandomArrayItem(messages)).join(' ');
-  const name = getRandomArrayItem(names);
+  const message = Array.from({ length: messageCount }, () => getRandomArrayItem(MESSAGES)).join(' ');
+  const name = getRandomArrayItem(NAMES);
 
   return {
     id,
@@ -24,15 +28,16 @@ function generateComment(usedCommentIds) {
     message,
     name,
   };
-}
+};
 
-export function generatePhotoDescriptions() {
+export const generatePhotoDescriptions = () => {
+  const PHOTO_COUNT = 25;
   const photoDescriptions = [];
   const usedCommentIds = new Set();
 
-  for (let i = 1; i <= 25; i++) {
+  for (let i = 1; i <= PHOTO_COUNT; i++) {
     const commentsCount = getRandomInt(0, 30);
-    const comments = Array.from({ length: commentsCount }, () => generateComment(usedCommentIds));
+    const comments = Array.from({ length: commentsCount }, () => generateSingleComment(usedCommentIds));
 
     photoDescriptions.push({
       id: i,
@@ -44,4 +49,4 @@ export function generatePhotoDescriptions() {
   }
 
   return photoDescriptions;
-}
+};
