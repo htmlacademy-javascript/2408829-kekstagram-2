@@ -19,6 +19,12 @@ const onEscKeyDown = (evt) => {
   }
 };
 
+const closeFullsizePhoto = () => {
+  bigPicture.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onEscKeyDown);
+};
+
 const createCommentElement = (comment) => {
   const li = document.createElement('li');
   li.classList.add('social__comment');
@@ -63,12 +69,6 @@ export const openFullsizePhoto = (photo) => {
   body.classList.add('modal-open');
 
   document.addEventListener('keydown', onEscKeyDown);
-};
-
-const closeFullsizePhoto = () => {
-  bigPicture.classList.add('hidden');
-  body.classList.remove('modal-open');
-  document.removeEventListener('keydown', onEscKeyDown);
 };
 
 closeButton.addEventListener('click', () => {
