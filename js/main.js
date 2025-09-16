@@ -1,6 +1,7 @@
 import { generatePhotoDescriptions } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
+import './form.js';
 
 const photos = generatePhotoDescriptions();
 renderThumbnails(photos);
