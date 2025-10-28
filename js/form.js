@@ -1,3 +1,5 @@
+import { sendData } from './api.js';
+
 const FILE_INPUT = document.querySelector('.img-upload__input');
 const FORM = document.querySelector('.img-upload__form');
 const OVERLAY = document.querySelector('.img-upload__overlay');
@@ -45,30 +47,34 @@ const validateHashtags = (value) => {
   if (!value.trim()) {
     return true;
   }
-
   const hashtags = value.trim().toLowerCase().split(/\s+/);
   const hashtagPattern = /^#[a-zа-яё0-9]{1,19}$/i;
-
-  if (hashtags.length > 5) {
-    return false;
-  }
-
+  if (hashtags.length > 5) return false;
   const uniqueTags = new Set(hashtags);
-  if (uniqueTags.size !== hashtags.length) {
-    return false;
-  }
-
+  if (uniqueTags.size !== hashtags.length) return false;
   return hashtags.every((tag) => hashtagPattern.test(tag));
 };
 
 const validateComment = (value) => value.length <= 140;
 
-pristine.addValidator(HASHTAGS_INPUT, validateHashtags, 'Введите не более 5 хэштегов, начинающихся с #, без спецсимволов и повторов');
+pristine.addValidator(HASHTAGS_INPUT, validateHashtags, 'Не более 5 хэштегов, без повторов, от # и без спецсимволов');
 pristine.addValidator(DESCRIPTION_INPUT, validateComment, 'Комментарий не должен превышать 140 символов');
 
 FORM.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+
   const isValid = pristine.validate();
-  if (!isValid) {
-    evt.preventDefault();
+
+  if (isValid) {
+    const formData = new FormData(FORM);
+
+    sendData(formData)
+      .then(() => {
+        closeForm();
+        alert('Форма успешно отправлена!');
+      })
+      .catch(() => {
+        alert('Ошибка при отправке формы. Попробуйте снова.');
+      });
   }
 });
