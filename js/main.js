@@ -1,21 +1,18 @@
-import { generatePhotoDescriptions } from './data.js';
+import { getData } from './api.js';
 import { renderThumbnails } from './render-thumbnails.js';
-import { openFullsizePhoto } from './render-fullsize.js';
-import './form.js';
+import { initFilters } from './filters.js';
+import { initForm } from './form.js';
+import { initEffects } from './effects.js';
 
-const photos = generatePhotoDescriptions();
-renderThumbnails(photos);
+getData()
+  .then((photos) => {
+    renderThumbnails(photos);
+    initFilters(photos, renderThumbnails);
+    document.querySelector('.img-filters').classList.remove('img-filters--inactive');
+  })
+  .catch((err) => {
+    alert(`Ошибка загрузки данных: ${err.message}`);
+  });
 
-const picturesContainer = document.querySelector('.pictures');
-
-picturesContainer.addEventListener('click', (evt) => {
-  const picture = evt.target.closest('.picture');
-  if (!picture) {
-    return;
-  }
-
-  const index = picture.dataset.index;
-  if (index !== undefined) {
-    openFullsizePhoto(photos[+index]);
-  }
-});
+initForm();
+initEffects();
