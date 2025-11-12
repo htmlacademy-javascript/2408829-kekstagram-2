@@ -9,8 +9,7 @@ getData()
   })
   .catch(() => {
     const errorTemplate = document.querySelector('#data-error').content.querySelector('.data-error');
-    const errorElement = errorTemplate.cloneNode(true);
-    document.body.appendChild(errorElement);
+    document.body.append(errorTemplate.cloneNode(true));
   });
 
 initForm();
