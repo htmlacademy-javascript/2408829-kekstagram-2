@@ -1,17 +1,16 @@
-import { getData } from './api.js';
+import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
-import { initFilters } from './filters.js';
 import { initForm } from './form.js';
 import { initEffects } from './effects.js';
 
 getData()
-  .then((photos) => {
-    renderThumbnails(photos);
-    initFilters(photos, renderThumbnails);
-    document.querySelector('.img-filters').classList.remove('img-filters--inactive');
+  .then((pictures) => {
+    renderThumbnails(pictures);
   })
-  .catch((err) => {
-    alert(`Ошибка загрузки данных: ${err.message}`);
+  .catch(() => {
+    const errorTemplate = document.querySelector('#data-error').content.querySelector('.data-error');
+    const errorElement = errorTemplate.cloneNode(true);
+    document.body.appendChild(errorElement);
   });
 
 initForm();

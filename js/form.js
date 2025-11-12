@@ -1,74 +1,94 @@
-const FILE_INPUT = document.querySelector('.img-upload__input');
-const FORM = document.querySelector('.img-upload__form');
-const OVERLAY = document.querySelector('.img-upload__overlay');
-const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
-const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
-const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
+import { sendData } from './data.js';
 
-const pristine = new Pristine(FORM, {
+const form = document.querySelector('#upload-select-image');
+const overlay = form.querySelector('.img-upload__overlay');
+const fileField = form.querySelector('#upload-file');
+const cancelButton = form.querySelector('#upload-cancel');
+const submitButton = form.querySelector('#upload-submit');
+
+const pristine = new Pristine(form, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'form__error',
+  errorTextClass: 'img-upload__error-text',
 });
 
-const openForm = () => {
-  OVERLAY.classList.remove('hidden');
-  document.body.classList.add('modal-open');
+const successTemplate = document.querySelector('#success').content.querySelector('.success');
+const errorTemplate = document.querySelector('#error').content.querySelector('.error');
+
+const showMessage = (template) => {
+  const messageElement = template.cloneNode(true);
+  document.body.appendChild(messageElement);
+
+  const button = messageElement.querySelector('button');
+
+  const closeMessage = () => {
+    messageElement.remove();
+    document.removeEventListener('keydown', onEscKeyDown);
+  };
+
+  function onEscKeyDown(evt) {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      closeMessage();
+    }
+  }
+
+  button.addEventListener('click', closeMessage);
+  document.addEventListener('keydown', onEscKeyDown);
+};
+
+const blockSubmitButton = () => {
+  submitButton.disabled = true;
+  submitButton.textContent = 'Публикую...';
+};
+
+const unblockSubmitButton = () => {
+  submitButton.disabled = false;
+  submitButton.textContent = 'Опубликовать';
 };
 
 const closeForm = () => {
-  OVERLAY.classList.add('hidden');
+  overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  FORM.reset();
+  form.reset();
   pristine.reset();
 };
 
-const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape') {
-    evt.preventDefault();
-    closeForm();
-    document.removeEventListener('keydown', onDocumentKeydown);
-  }
-};
-
-FILE_INPUT.addEventListener('change', () => {
-  openForm();
-  document.addEventListener('keydown', onDocumentKeydown);
+fileField.addEventListener('change', () => {
+  overlay.classList.remove('hidden');
+  document.body.classList.add('modal-open');
 });
 
-CANCEL_BUTTON.addEventListener('click', () => {
+cancelButton.addEventListener('click', (evt) => {
+  evt.preventDefault();
   closeForm();
-  document.removeEventListener('keydown', onDocumentKeydown);
 });
 
-const validateHashtags = (value) => {
-  if (!value.trim()) {
-    return true;
-  }
+form.addEventListener('submit', (evt) => {
+  evt.preventDefault();
 
-  const hashtags = value.trim().toLowerCase().split(/\s+/);
-  const hashtagPattern = /^#[a-zа-яё0-9]{1,19}$/i;
-
-  if (hashtags.length > 5) {
-    return false;
-  }
-
-  const uniqueTags = new Set(hashtags);
-  if (uniqueTags.size !== hashtags.length) {
-    return false;
-  }
-
-  return hashtags.every((tag) => hashtagPattern.test(tag));
-};
-
-const validateComment = (value) => value.length <= 140;
-
-pristine.addValidator(HASHTAGS_INPUT, validateHashtags, 'Введите не более 5 хэштегов, начинающихся с #, без спецсимволов и повторов');
-pristine.addValidator(DESCRIPTION_INPUT, validateComment, 'Комментарий не должен превышать 140 символов');
-
-FORM.addEventListener('submit', (evt) => {
   const isValid = pristine.validate();
   if (!isValid) {
-    evt.preventDefault();
+    return;
   }
+
+  const formData = new FormData(evt.target);
+
+  blockSubmitButton();
+  sendData(formData)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Ошибка отправки данных');
+      }
+      closeForm();
+      showMessage(successTemplate);
+    })
+    .catch(() => {
+      showMessage(errorTemplate);
+    })
+    .finally(unblockSubmitButton);
 });
+
+const initForm = () => {};
+
+export { initForm };
