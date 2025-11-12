@@ -25,11 +25,7 @@ const updateSlider = () => {
     step: currentEffect.step,
   });
 
-  if (isDefault()) {
-    sliderContainer.classList.add('hidden');
-  } else {
-    sliderContainer.classList.remove('hidden');
-  }
+  sliderContainer.classList.toggle('hidden', isDefault());
 };
 
 const onSliderUpdate = () => {
@@ -39,6 +35,7 @@ const onSliderUpdate = () => {
 };
 
 const onEffectChange = (evt) => {
+  if (!evt.target.matches('input[type="radio"]')) return;
   currentEffect = EFFECTS[evt.target.value];
   updateSlider();
   onSliderUpdate();
@@ -51,7 +48,6 @@ const initSlider = () => {
     step: currentEffect.step,
     connect: 'lower',
   });
-
   sliderElement.noUiSlider.on('update', onSliderUpdate);
 };
 
