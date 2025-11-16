@@ -1,68 +1,49 @@
-import { sendData } from './data.js';
+import { resetEffects, initEffects, destroySlider } from './effects.js';
 
-const form = document.querySelector('#upload-select-image');
+const form = document.querySelector('.img-upload__form');
 const overlay = form.querySelector('.img-upload__overlay');
-const fileField = form.querySelector('#upload-file');
+const fileInput = form.querySelector('#upload-file');
 const cancelButton = form.querySelector('#upload-cancel');
-const submitButton = form.querySelector('#upload-submit');
-const previewImage = form.querySelector('.img-upload__preview img');
-const smallerButton = form.querySelector('.scale__control--smaller');
-const biggerButton = form.querySelector('.scale__control--bigger');
+const scaleSmallerButton = form.querySelector('.scale__control--smaller');
+const scaleBiggerButton = form.querySelector('.scale__control--bigger');
 const scaleValue = form.querySelector('.scale__control--value');
+const previewImage = form.querySelector('.img-upload__preview img');
 
-const SCALE_STEP = 25;
-const SCALE_MIN = 25;
-const SCALE_MAX = 100;
 let currentScale = 100;
+const MIN_SCALE = 25;
+const MAX_SCALE = 100;
+const STEP_SCALE = 25;
 
-const pristine = new Pristine(form, {
-  classTo: 'img-upload__field-wrapper',
-  errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'img-upload__error-text',
-});
+const setScale = (value) => {
+  currentScale = value;
+  scaleValue.value = `${value}%`;
+  previewImage.style.transform = `scale(${value / 100})`;
+};
 
-const successTemplate = document.querySelector('#success').content.querySelector('.success');
-const errorTemplate = document.querySelector('#error').content.querySelector('.error');
-
-const showMessage = (template) => {
-  const element = template.cloneNode(true);
-  document.body.appendChild(element);
-  const button = element.querySelector('button');
-
-  const closeMessage = () => {
-    element.remove();
-    document.removeEventListener('keydown', onEscKeyDown);
-  };
-
-  function onEscKeyDown(evt) {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      closeMessage();
-    }
+const scaleSmaller = () => {
+  if (currentScale > MIN_SCALE) {
+    setScale(currentScale - STEP_SCALE);
   }
-
-  button.addEventListener('click', closeMessage);
-  document.addEventListener('keydown', onEscKeyDown);
 };
 
-const blockSubmitButton = () => {
-  submitButton.disabled = true;
-  submitButton.textContent = 'Публикую...';
+const scaleBigger = () => {
+  if (currentScale < MAX_SCALE) {
+    setScale(currentScale + STEP_SCALE);
+  }
 };
 
-const unblockSubmitButton = () => {
-  submitButton.disabled = false;
-  submitButton.textContent = 'Опубликовать';
+const resetFormState = () => {
+  form.reset();
+  setScale(100);
+  resetEffects();
+  destroySlider();
 };
 
 const closeForm = () => {
   overlay.classList.add('hidden');
   document.body.classList.remove('modal-open');
-  form.reset();
-  pristine.reset();
-  previewImage.style.transform = '';
-  fileField.value = '';
-  removeFormListeners();
+  resetFormState();
+  removeEventListeners();
 };
 
 const onEscKeyDown = (evt) => {
@@ -72,72 +53,30 @@ const onEscKeyDown = (evt) => {
   }
 };
 
-const openForm = () => {
-  overlay.classList.remove('hidden');
-  document.body.classList.add('modal-open');
-  addFormListeners();
-};
+const onCancelClick = () => closeForm();
 
-const onCancelClick = (evt) => {
-  evt.preventDefault();
-  closeForm();
-};
-
-const onFormSubmit = (evt) => {
-  evt.preventDefault();
-  if (!pristine.validate()) {
-    return;
-  }
-
-  const formData = new FormData(evt.target);
-  blockSubmitButton();
-
-  sendData(formData)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Ошибка отправки данных');
-      }
-      closeForm();
-      showMessage(successTemplate);
-    })
-    .catch(() => {
-      showMessage(errorTemplate);
-    })
-    .finally(unblockSubmitButton);
-};
-
-const onScaleSmallerClick = () => {
-  currentScale = Math.max(currentScale - SCALE_STEP, SCALE_MIN);
-  updateScale();
-};
-
-const onScaleBiggerClick = () => {
-  currentScale = Math.min(currentScale + SCALE_STEP, SCALE_MAX);
-  updateScale();
-};
-
-const updateScale = () => {
-  scaleValue.value = `${currentScale}%`;
-  previewImage.style.transform = `scale(${currentScale / 100})`;
-};
-
-function addFormListeners() {
+const addEventListeners = () => {
   document.addEventListener('keydown', onEscKeyDown);
   cancelButton.addEventListener('click', onCancelClick);
-  form.addEventListener('submit', onFormSubmit);
-  smallerButton.addEventListener('click', onScaleSmallerClick);
-  biggerButton.addEventListener('click', onScaleBiggerClick);
-}
+  scaleSmallerButton.addEventListener('click', scaleSmaller);
+  scaleBiggerButton.addEventListener('click', scaleBigger);
+};
 
-function removeFormListeners() {
+const removeEventListeners = () => {
   document.removeEventListener('keydown', onEscKeyDown);
   cancelButton.removeEventListener('click', onCancelClick);
-  form.removeEventListener('submit', onFormSubmit);
-  smallerButton.removeEventListener('click', onScaleSmallerClick);
-  biggerButton.removeEventListener('click', onScaleBiggerClick);
-}
+  scaleSmallerButton.removeEventListener('click', scaleSmaller);
+  scaleBiggerButton.removeEventListener('click', scaleBigger);
+};
 
-fileField.addEventListener('change', openForm);
+fileInput.addEventListener('change', () => {
+  overlay.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  setScale(100);
+  initEffects();
+  addEventListeners();
+});
 
-export { openForm, closeForm, initForm };
-function initForm() {}
+form.addEventListener('reset', () => {
+  closeForm();
+});
