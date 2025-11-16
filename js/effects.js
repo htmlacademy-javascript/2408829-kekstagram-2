@@ -1,60 +1,105 @@
+import { resetScale } from './scale.js';
+
 const EFFECTS = {
-  none: { range: { min: 0, max: 100 }, start: 100, step: 1, style: '', unit: '' },
-  chrome: { range: { min: 0, max: 1 }, start: 1, step: 0.1, style: 'grayscale', unit: '' },
-  sepia: { range: { min: 0, max: 1 }, start: 1, step: 0.1, style: 'sepia', unit: '' },
-  marvin: { range: { min: 0, max: 100 }, start: 100, step: 1, style: 'invert', unit: '%' },
-  phobos: { range: { min: 0, max: 3 }, start: 3, step: 0.1, style: 'blur', unit: 'px' },
-  heat: { range: { min: 1, max: 3 }, start: 3, step: 0.1, style: 'brightness', unit: '' },
+  chrome: {
+    filter: 'grayscale',
+    unit: '',
+    range: { min: 0, max: 1, step: 0.1 }
+  },
+  sepia: {
+    filter: 'sepia',
+    unit: '',
+    range: { min: 0, max: 1, step: 0.1 }
+  },
+  marvin: {
+    filter: 'invert',
+    unit: '%',
+    range: { min: 0, max: 100, step: 1 }
+  },
+  phobos: {
+    filter: 'blur',
+    unit: 'px',
+    range: { min: 0, max: 3, step: 0.1 }
+  },
+  heat: {
+    filter: 'brightness',
+    unit: '',
+    range: { min: 1, max: 3, step: 0.1 }
+  },
+  none: {
+    filter: 'none'
+  }
 };
 
-const form = document.querySelector('.img-upload__form');
-const sliderContainer = form.querySelector('.effect-level');
-const sliderElement = form.querySelector('.effect-level__slider');
-const effectValue = form.querySelector('.effect-level__value');
-const preview = form.querySelector('.img-upload__preview img');
-const effectsList = form.querySelector('.effects__list');
+const previewImage = document.querySelector('.img-upload__preview img');
+const effectLevelSlider = document.querySelector('.effect-level__slider');
+const effectValueInput = document.querySelector('.effect-level__value');
+const effectsList = document.querySelector('.effects__list');
 
-let currentEffect = EFFECTS.none;
+let currentEffect = 'none';
 
-const isDefault = () => currentEffect === EFFECTS.none;
+const applyEffect = (effect, value) => {
+  if (effect === 'none') {
+    previewImage.style.filter = '';
+    effectValueInput.value = '';
+    return;
+  }
 
-const updateSlider = () => {
-  sliderElement.noUiSlider.updateOptions({
-    range: currentEffect.range,
-    start: currentEffect.start,
-    step: currentEffect.step,
+  const { filter, unit } = EFFECTS[effect];
+  previewImage.style.filter = `${filter}(${value}${unit})`;
+  effectValueInput.value = value;
+};
+
+const updateSlider = (effect) => {
+  if (effect === 'none') {
+    effectLevelSlider.classList.add('hidden');
+    return;
+  }
+
+  const { range } = EFFECTS[effect];
+  effectLevelSlider.classList.remove('hidden');
+
+  noUiSlider.create(effectLevelSlider, {
+    range: { min: range.min, max: range.max },
+    start: range.max,
+    step: range.step,
+    connect: 'lower',
+    format: {
+      to: (value) => parseFloat(value).toFixed(1),
+      from: (value) => parseFloat(value)
+    }
   });
 
-  sliderContainer.classList.toggle('hidden', isDefault());
+  effectLevelSlider.noUiSlider.on('update', () => {
+    const value = effectLevelSlider.noUiSlider.get();
+    applyEffect(effect, value);
+  });
 };
 
-const onSliderUpdate = () => {
-  const value = sliderElement.noUiSlider.get();
-  effectValue.value = value;
-  preview.style.filter = isDefault() ? '' : `${currentEffect.style}(${value}${currentEffect.unit})`;
+const resetSlider = () => {
+  if (effectLevelSlider.noUiSlider) {
+    effectLevelSlider.noUiSlider.destroy();
+  }
 };
 
 const onEffectChange = (evt) => {
-  if (!evt.target.matches('input[type="radio"]')) return;
-  currentEffect = EFFECTS[evt.target.value];
-  updateSlider();
-  onSliderUpdate();
-};
+  if (!evt.target.matches('input[name="effect"]')) return;
 
-const initSlider = () => {
-  noUiSlider.create(sliderElement, {
-    range: currentEffect.range,
-    start: currentEffect.start,
-    step: currentEffect.step,
-    connect: 'lower',
-  });
-  sliderElement.noUiSlider.on('update', onSliderUpdate);
+  currentEffect = evt.target.value;
+  resetSlider();
+  updateSlider(currentEffect);
+  resetScale();
 };
 
 const initEffects = () => {
-  initSlider();
   effectsList.addEventListener('change', onEffectChange);
-  sliderContainer.classList.add('hidden');
+  updateSlider('none');
 };
 
-export { initEffects };
+const resetEffects = () => {
+  currentEffect = 'none';
+  resetSlider();
+  updateSlider(currentEffect);
+};
+
+export { initEffects, resetEffects };
