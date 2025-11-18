@@ -48,6 +48,12 @@ const renderFullsizePhoto = (photo) => {
 
   commentsContainer.appendChild(commentsFragment);
 
+   const closeFullsizePhoto = () => {
+    overlay.classList.add('hidden');
+    body.classList.remove('modal-open');
+    document.removeEventListener('keydown', onEscKeyDown);
+  };
+
   const onEscKeyDown = (evt) => {
     if (evt.key === 'Escape') {
       evt.preventDefault();
@@ -56,12 +62,6 @@ const renderFullsizePhoto = (photo) => {
   };
 
   document.addEventListener('keydown', onEscKeyDown);
-
-  const closeFullsizePhoto = () => {
-    overlay.classList.add('hidden');
-    body.classList.remove('modal-open');
-    document.removeEventListener('keydown', onEscKeyDown);
-  };
 
   cancelButton.addEventListener('click', () => {
     closeFullsizePhoto();
