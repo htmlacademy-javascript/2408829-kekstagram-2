@@ -48,7 +48,7 @@ const renderFullsizePhoto = (photo) => {
 
   commentsContainer.appendChild(commentsFragment);
 
-   const closeFullsizePhoto = () => {
+  const closeFullsizePhoto = () => {
     overlay.classList.add('hidden');
     body.classList.remove('modal-open');
     document.removeEventListener('keydown', onEscKeyDown);

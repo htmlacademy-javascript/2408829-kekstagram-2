@@ -56,6 +56,13 @@ const onEscKeyDown = (evt) => {
   }
 };
 
+const removeEventListeners = () => {
+  document.removeEventListener('keydown', onEscKeyDown);
+  cancelButton.removeEventListener('click', onCancelClick);
+  scaleSmaller.removeEventListener('click', onScaleSmallerClick);
+  scaleBigger.removeEventListener('click', onScaleBiggerClick);
+};
+
 const openForm = () => {
   overlay.classList.remove('hidden');
   body.classList.add('modal-open');
@@ -73,11 +80,7 @@ const closeForm = () => {
   overlay.classList.add('hidden');
   body.classList.remove('modal-open');
   form.reset();
-
-  document.removeEventListener('keydown', onEscKeyDown);
-  cancelButton.removeEventListener('click', onCancelClick);
-  scaleSmaller.removeEventListener('click', onScaleSmallerClick);
-  scaleBigger.removeEventListener('click', onScaleBiggerClick);
+  removeEventListeners();
 };
 
 uploadInput.addEventListener('change', () => {
