@@ -26,6 +26,13 @@ const applyScale = (value) => {
   scaleValue.value = `${value}%`;
 };
 
+const closeForm = () => {
+  overlay.classList.add('hidden');
+  body.classList.remove('modal-open');
+  form.reset();
+  removeEventListeners();
+};
+
 const resetScale = () => {
   currentScale = Scale.MAX;
   applyScale(currentScale);
@@ -74,13 +81,6 @@ const openForm = () => {
   cancelButton.addEventListener('click', onCancelClick);
   scaleSmaller.addEventListener('click', onScaleSmallerClick);
   scaleBigger.addEventListener('click', onScaleBiggerClick);
-};
-
-const closeForm = () => {
-  overlay.classList.add('hidden');
-  body.classList.remove('modal-open');
-  form.reset();
-  removeEventListeners();
 };
 
 uploadInput.addEventListener('change', () => {

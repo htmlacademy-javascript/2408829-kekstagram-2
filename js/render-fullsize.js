@@ -31,6 +31,19 @@ const createComment = (comment) => {
   return li;
 };
 
+function closeFullsizePhoto() {
+  overlay.classList.add('hidden');
+  body.classList.remove('modal-open');
+  document.removeEventListener('keydown', onEscKeyDown);
+}
+
+const onEscKeyDown = (evt) => {
+  if (evt.key === 'Escape') {
+    evt.preventDefault();
+    closeFullsizePhoto();
+  }
+};
+
 const renderFullsizePhoto = (photo) => {
   overlay.classList.remove('hidden');
   body.classList.add('modal-open');
@@ -47,19 +60,6 @@ const renderFullsizePhoto = (photo) => {
   });
 
   commentsContainer.appendChild(commentsFragment);
-
-  const closeFullsizePhoto = () => {
-    overlay.classList.add('hidden');
-    body.classList.remove('modal-open');
-    document.removeEventListener('keydown', onEscKeyDown);
-  };
-
-  const onEscKeyDown = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      closeFullsizePhoto();
-    }
-  };
 
   document.addEventListener('keydown', onEscKeyDown);
 
