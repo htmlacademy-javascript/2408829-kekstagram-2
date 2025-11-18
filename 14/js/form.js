@@ -1,82 +1,103 @@
-import { resetEffects, initEffects, destroySlider } from './effects.js';
+import { isEscapeKey } from './utilities.js';
+import { initEffects, resetEffects } from './effects.js';
+import { sendData } from './data.js';
 
 const form = document.querySelector('.img-upload__form');
-const overlay = form.querySelector('.img-upload__overlay');
-const fileInput = form.querySelector('#upload-file');
-const cancelButton = form.querySelector('#upload-cancel');
-const scaleSmallerButton = form.querySelector('.scale__control--smaller');
-const scaleBiggerButton = form.querySelector('.scale__control--bigger');
+const uploadInput = document.querySelector('.img-upload__input');
+const overlay = document.querySelector('.img-upload__overlay');
+const cancelButton = document.querySelector('.img-upload__cancel');
+const body = document.body;
+
+const scaleSmaller = form.querySelector('.scale__control--smaller');
+const scaleBigger = form.querySelector('.scale__control--bigger');
 const scaleValue = form.querySelector('.scale__control--value');
 const previewImage = form.querySelector('.img-upload__preview img');
 
-let currentScale = 100;
-const MIN_SCALE = 25;
-const MAX_SCALE = 100;
-const STEP_SCALE = 25;
+const Scale = {
+  MIN: 25,
+  MAX: 100,
+  STEP: 25
+};
 
-const setScale = (value) => {
-  currentScale = value;
-  scaleValue.value = `${value}%`;
+let currentScale = Scale.MAX;
+
+const applyScale = (value) => {
   previewImage.style.transform = `scale(${value / 100})`;
-};
-
-const scaleSmaller = () => {
-  if (currentScale > MIN_SCALE) {
-    setScale(currentScale - STEP_SCALE);
-  }
-};
-
-const scaleBigger = () => {
-  if (currentScale < MAX_SCALE) {
-    setScale(currentScale + STEP_SCALE);
-  }
-};
-
-const resetFormState = () => {
-  form.reset();
-  setScale(100);
-  resetEffects();
-  destroySlider();
+  scaleValue.value = `${value}%`;
 };
 
 const closeForm = () => {
   overlay.classList.add('hidden');
-  document.body.classList.remove('modal-open');
-  resetFormState();
+  body.classList.remove('modal-open');
+  form.reset();
   removeEventListeners();
 };
 
+const resetScale = () => {
+  currentScale = Scale.MAX;
+  applyScale(currentScale);
+};
+
+const onScaleSmallerClick = () => {
+  if (currentScale > Scale.MIN) {
+    currentScale -= Scale.STEP;
+    applyScale(currentScale);
+  }
+};
+
+const onScaleBiggerClick = () => {
+  if (currentScale < Scale.MAX) {
+    currentScale += Scale.STEP;
+    applyScale(currentScale);
+  }
+};
+
+const onCancelClick = () => {
+  closeForm();
+};
+
 const onEscKeyDown = (evt) => {
-  if (evt.key === 'Escape') {
+  if (isEscapeKey(evt)) {
     evt.preventDefault();
     closeForm();
   }
 };
 
-const onCancelClick = () => closeForm();
-
-const addEventListeners = () => {
-  document.addEventListener('keydown', onEscKeyDown);
-  cancelButton.addEventListener('click', onCancelClick);
-  scaleSmallerButton.addEventListener('click', scaleSmaller);
-  scaleBiggerButton.addEventListener('click', scaleBigger);
-};
-
 const removeEventListeners = () => {
   document.removeEventListener('keydown', onEscKeyDown);
   cancelButton.removeEventListener('click', onCancelClick);
-  scaleSmallerButton.removeEventListener('click', scaleSmaller);
-  scaleBiggerButton.removeEventListener('click', scaleBigger);
+  scaleSmaller.removeEventListener('click', onScaleSmallerClick);
+  scaleBigger.removeEventListener('click', onScaleBiggerClick);
 };
 
-fileInput.addEventListener('change', () => {
+const openForm = () => {
   overlay.classList.remove('hidden');
-  document.body.classList.add('modal-open');
-  setScale(100);
-  initEffects();
-  addEventListeners();
+  body.classList.add('modal-open');
+
+  resetScale();
+  resetEffects();
+
+  document.addEventListener('keydown', onEscKeyDown);
+  cancelButton.addEventListener('click', onCancelClick);
+  scaleSmaller.addEventListener('click', onScaleSmallerClick);
+  scaleBigger.addEventListener('click', onScaleBiggerClick);
+};
+
+uploadInput.addEventListener('change', () => {
+  openForm();
 });
 
-form.addEventListener('reset', () => {
-  closeForm();
+form.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+
+  const formData = new FormData(form);
+  sendData(formData)
+    .then(() => {
+      closeForm();
+    })
+    .catch(() => {
+      alert('Ошибка при отправке формы');
+    });
 });
+
+initEffects();
