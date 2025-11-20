@@ -1,7 +1,6 @@
 import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { initForm } from './form.js';
-import { initEffects } from './effects.js';
 
 getData()
   .then((pictures) => {
@@ -13,4 +12,3 @@ getData()
   });
 
 initForm();
-initEffects();
