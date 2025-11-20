@@ -17,6 +17,9 @@ const pristine = new Pristine(FORM, {
 const openForm = () => {
   OVERLAY.classList.remove('hidden');
   document.body.classList.add('modal-open');
+
+  resetScale();
+  resetEffects();
 };
 
 const closeForm = () => {
@@ -24,6 +27,7 @@ const closeForm = () => {
   document.body.classList.remove('modal-open');
   FORM.reset();
   pristine.reset();
+
   resetScale();
   resetEffects();
 };
@@ -37,15 +41,17 @@ const onDocumentKeydown = (evt) => {
 };
 
 FILE_INPUT.addEventListener('change', () => {
-  openForm();
-  document.addEventListener('keydown', onDocumentKeydown);
+  const file = FILE_INPUT.files[0];
+
+  if (!file) {
+    return;
+  }
 
   const preview = document.querySelector('.img-upload__preview img');
-  const file = FILE_INPUT.files[0];
   preview.src = URL.createObjectURL(file);
 
-  resetScale();
-  resetEffects();
+  openForm();
+  document.addEventListener('keydown', onDocumentKeydown);
 });
 
 CANCEL_BUTTON.addEventListener('click', () => {
@@ -75,8 +81,16 @@ const validateHashtags = (value) => {
 
 const validateComment = (value) => value.length <= 140;
 
-pristine.addValidator(HASHTAGS_INPUT, validateHashtags, 'Введите не более 5 хэштегов, начинающихся с #, без спецсимволов и повторов');
-pristine.addValidator(DESCRIPTION_INPUT, validateComment, 'Комментарий не должен превышать 140 символов');
+pristine.addValidator(
+  HASHTAGS_INPUT,
+  validateHashtags,
+  'Введите не более 5 хэштегов, начинающихся с #, без спецсимволов и повторов'
+);
+pristine.addValidator(
+  DESCRIPTION_INPUT,
+  validateComment,
+  'Комментарий не должен превышать 140 символов'
+);
 
 FORM.addEventListener('submit', (evt) => {
   const isValid = pristine.validate();
@@ -85,7 +99,5 @@ FORM.addEventListener('submit', (evt) => {
   }
 });
 
-export const initForm = () => {
-  initScale();
-  initEffects();
-};
+initScale();
+initEffects();
