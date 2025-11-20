@@ -1,103 +1,74 @@
-import { isEscapeKey } from './utilities.js';
-import { initEffects, resetEffects } from './effects.js';
-import { sendData } from './data.js';
+const FILE_INPUT = document.querySelector('.img-upload__input');
+const FORM = document.querySelector('.img-upload__form');
+const OVERLAY = document.querySelector('.img-upload__overlay');
+const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
+const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
+const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
 
-const form = document.querySelector('.img-upload__form');
-const uploadInput = document.querySelector('.img-upload__input');
-const overlay = document.querySelector('.img-upload__overlay');
-const cancelButton = document.querySelector('.img-upload__cancel');
-const body = document.body;
+const pristine = new Pristine(FORM, {
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'form__error',
+});
 
-const scaleSmaller = form.querySelector('.scale__control--smaller');
-const scaleBigger = form.querySelector('.scale__control--bigger');
-const scaleValue = form.querySelector('.scale__control--value');
-const previewImage = form.querySelector('.img-upload__preview img');
-
-const Scale = {
-  MIN: 25,
-  MAX: 100,
-  STEP: 25
-};
-
-let currentScale = Scale.MAX;
-
-const applyScale = (value) => {
-  previewImage.style.transform = `scale(${value / 100})`;
-  scaleValue.value = `${value}%`;
+const openForm = () => {
+  OVERLAY.classList.remove('hidden');
+  document.body.classList.add('modal-open');
 };
 
 const closeForm = () => {
-  overlay.classList.add('hidden');
-  body.classList.remove('modal-open');
-  form.reset();
-  removeEventListeners();
+  OVERLAY.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+  FORM.reset();
+  pristine.reset();
 };
 
-const resetScale = () => {
-  currentScale = Scale.MAX;
-  applyScale(currentScale);
-};
-
-const onScaleSmallerClick = () => {
-  if (currentScale > Scale.MIN) {
-    currentScale -= Scale.STEP;
-    applyScale(currentScale);
-  }
-};
-
-const onScaleBiggerClick = () => {
-  if (currentScale < Scale.MAX) {
-    currentScale += Scale.STEP;
-    applyScale(currentScale);
-  }
-};
-
-const onCancelClick = () => {
-  closeForm();
-};
-
-const onEscKeyDown = (evt) => {
-  if (isEscapeKey(evt)) {
+const onDocumentKeydown = (evt) => {
+  if (evt.key === 'Escape') {
     evt.preventDefault();
     closeForm();
+    document.removeEventListener('keydown', onDocumentKeydown);
   }
 };
 
-const removeEventListeners = () => {
-  document.removeEventListener('keydown', onEscKeyDown);
-  cancelButton.removeEventListener('click', onCancelClick);
-  scaleSmaller.removeEventListener('click', onScaleSmallerClick);
-  scaleBigger.removeEventListener('click', onScaleBiggerClick);
-};
-
-const openForm = () => {
-  overlay.classList.remove('hidden');
-  body.classList.add('modal-open');
-
-  resetScale();
-  resetEffects();
-
-  document.addEventListener('keydown', onEscKeyDown);
-  cancelButton.addEventListener('click', onCancelClick);
-  scaleSmaller.addEventListener('click', onScaleSmallerClick);
-  scaleBigger.addEventListener('click', onScaleBiggerClick);
-};
-
-uploadInput.addEventListener('change', () => {
+FILE_INPUT.addEventListener('change', () => {
   openForm();
+  document.addEventListener('keydown', onDocumentKeydown);
 });
 
-form.addEventListener('submit', (evt) => {
-  evt.preventDefault();
-
-  const formData = new FormData(form);
-  sendData(formData)
-    .then(() => {
-      closeForm();
-    })
-    .catch(() => {
-      alert('Ошибка при отправке формы');
-    });
+CANCEL_BUTTON.addEventListener('click', () => {
+  closeForm();
+  document.removeEventListener('keydown', onDocumentKeydown);
 });
 
-initEffects();
+const validateHashtags = (value) => {
+  if (!value.trim()) {
+    return true;
+  }
+
+  const hashtags = value.trim().toLowerCase().split(/\s+/);
+  const hashtagPattern = /^#[a-zа-яё0-9]{1,19}$/i;
+
+  if (hashtags.length > 5) {
+    return false;
+  }
+
+  const uniqueTags = new Set(hashtags);
+  if (uniqueTags.size !== hashtags.length) {
+    return false;
+  }
+
+  return hashtags.every((tag) => hashtagPattern.test(tag));
+};
+
+const validateComment = (value) => value.length <= 140;
+
+pristine.addValidator(HASHTAGS_INPUT, validateHashtags, 'Введите не более 5 хэштегов, начинающихся с #, без спецсимволов и повторов');
+pristine.addValidator(DESCRIPTION_INPUT, validateComment, 'Комментарий не должен превышать 140 символов');
+
+FORM.addEventListener('submit', (evt) => {
+  const isValid = pristine.validate();
+  if (!isValid) {
+    evt.preventDefault();
+  }
+});
