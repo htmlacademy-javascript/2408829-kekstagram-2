@@ -1,5 +1,13 @@
 import noUiSlider from '../vendor/nouislider/nouislider.js';
 
+const preview = document.querySelector('.img-upload__preview img');
+const sliderContainer = document.querySelector('.effect-level__slider');
+const effectValue = document.querySelector('.effect-level__value');
+const effectsList = document.querySelector('.effects__list');
+
+let currentEffect = 'none';
+let slider = null;
+
 const EFFECTS = {
   none: { range: { min: 0, max: 100 }, start: 100, step: 1, style: '', unit: '' },
   chrome: { range: { min: 0, max: 1 }, start: 1, step: 0.1, style: 'grayscale', unit: '' },
@@ -8,14 +16,6 @@ const EFFECTS = {
   phobos: { range: { min: 0, max: 3 }, start: 3, step: 0.1, style: 'blur', unit: 'px' },
   heat: { range: { min: 1, max: 3 }, start: 3, step: 0.1, style: 'brightness', unit: '' },
 };
-
-const preview = document.querySelector('.img-upload__preview img');
-const sliderContainer = document.querySelector('.effect-level__slider');
-const effectValue = document.querySelector('.effect-level__value');
-const effectsList = document.querySelector('.effects__list');
-
-let currentEffect = 'none';
-let slider;
 
 const updateEffect = (value) => {
   const effect = EFFECTS[currentEffect];
@@ -31,7 +31,9 @@ const createSlider = (effect) => {
       step: effect.step,
       connect: 'lower',
     });
+
     slider = sliderContainer.noUiSlider;
+
     slider.on('update', (values) => {
       updateEffect(values[0]);
     });
@@ -42,10 +44,20 @@ const createSlider = (effect) => {
       step: effect.step,
     });
   }
+
   slider.set(effect.start);
 };
 
-const initEffects = () => {
+export const resetEffects = () => {
+  currentEffect = 'none';
+  preview.style.filter = '';
+  effectValue.value = '';
+  slider.set(EFFECTS.none.start);
+};
+
+export const initEffects = () => {
+  createSlider(EFFECTS.none);
+
   effectsList.addEventListener('change', (evt) => {
     if (evt.target.name === 'effect') {
       currentEffect = evt.target.value;
@@ -54,22 +66,4 @@ const initEffects = () => {
       updateEffect(effect.start);
     }
   });
-
-  createSlider(EFFECTS.none);
 };
-
-const resetEffects = () => {
-  currentEffect = 'none';
-  preview.style.filter = '';
-  effectValue.value = '';
-  slider.set(EFFECTS.none.start);
-};
-
-const destroySlider = () => {
-  if (slider) {
-    slider.destroy();
-    slider = null;
-  }
-};
-
-export { initEffects, resetEffects, destroySlider };
