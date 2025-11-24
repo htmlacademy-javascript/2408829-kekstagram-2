@@ -1,4 +1,4 @@
-import { generatePhotoDescriptions } from './data.js';
+import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
 import './form.js';
