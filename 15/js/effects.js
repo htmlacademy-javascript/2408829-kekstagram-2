@@ -2,6 +2,7 @@ const preview = document.querySelector('.img-upload__preview img');
 const sliderContainer = document.querySelector('.effect-level__slider');
 const effectValue = document.querySelector('.effect-level__value');
 const effectsList = document.querySelector('.effects__list');
+import { resetScale } from './scale.js';
 
 let currentEffect = 'none';
 let slider = null;
@@ -63,6 +64,7 @@ export const initEffects = () => {
     if (evt.target.name === 'effect') {
       currentEffect = evt.target.value;
       const effect = EFFECTS[currentEffect];
+      resetScale();
       createSlider(effect);
       updateEffect(effect.start);
     }
