@@ -1,5 +1,3 @@
-import noUiSlider from '../vendor/nouislider/nouislider.js';
-
 const preview = document.querySelector('.img-upload__preview img');
 const sliderContainer = document.querySelector('.effect-level__slider');
 const effectValue = document.querySelector('.effect-level__value');
@@ -37,6 +35,7 @@ const createSlider = (effect) => {
     slider.on('update', (values) => {
       updateEffect(values[0]);
     });
+
   } else {
     slider.updateOptions({
       range: effect.range,
@@ -52,7 +51,9 @@ export const resetEffects = () => {
   currentEffect = 'none';
   preview.style.filter = '';
   effectValue.value = '';
-  slider.set(EFFECTS.none.start);
+  if (slider) {
+    slider.set(EFFECTS.none.start);
+  }
 };
 
 export const initEffects = () => {
