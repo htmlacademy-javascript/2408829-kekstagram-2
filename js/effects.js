@@ -75,7 +75,6 @@ export const initEffects = () => {
       } else {
         effectLevel.classList.remove('hidden');
       }
-      resetScale();
       createSlider(effect);
       updateEffect(effect.start);
     }

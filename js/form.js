@@ -1,5 +1,6 @@
 import { initScale, resetScale } from './scale.js';
 import { initEffects, resetEffects } from './effects.js';
+import { sendData } from './data.js';
 
 const FILE_INPUT = document.querySelector('.img-upload__input');
 const FORM = document.querySelector('.img-upload__form');
@@ -7,12 +8,25 @@ const OVERLAY = document.querySelector('.img-upload__overlay');
 const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
 const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
 const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
+const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
 
 const pristine = new Pristine(FORM, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
   errorTextClass: 'form__error',
 });
+
+const submitButtonText = SUBMIT_BUTTON.textContent;
+
+const blockSubmitButton = () => {
+  SUBMIT_BUTTON.disabled = true;
+  SUBMIT_BUTTON.textContent = 'Публикую...';
+};
+
+const unblockSubmitButton = () => {
+  SUBMIT_BUTTON.disabled = false;
+  SUBMIT_BUTTON.textContent = submitButtonText;
+};
 
 const openForm = () => {
   OVERLAY.classList.remove('hidden');
@@ -32,6 +46,10 @@ const closeForm = () => {
 
 const onDocumentKeydown = (evt) => {
   if (evt.key === 'Escape') {
+    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
+    if (messageOpen) {
+      return;
+    }
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
@@ -89,11 +107,99 @@ pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный ф
 pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
 pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
 
+const showSuccessMessage = () => {
+  const template = document.querySelector('#success').content.querySelector('.success');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.success__button');
+
+  const close = () => {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  };
+
+  const onEsc = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      close();
+    }
+  };
+
+  const onClickOutside = (evt) => {
+    if (!evt.target.closest('.success__inner')) {
+      close();
+    }
+  };
+
+  button.addEventListener('click', () => {
+    close();
+  });
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
+};
+
+const showErrorMessage = () => {
+  const template = document.querySelector('#error').content.querySelector('.error');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.error__button');
+
+  const close = () => {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  };
+
+  const onEsc = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      close();
+    }
+  };
+
+  const onClickOutside = (evt) => {
+    if (!evt.target.closest('.error__inner')) {
+      close();
+    }
+  };
+
+  button.addEventListener('click', () => {
+    close();
+  });
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
+};
+
 FORM.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+
   const isValid = pristine.validate();
   if (!isValid) {
-    evt.preventDefault();
+    return;
   }
+
+  blockSubmitButton();
+
+  const formData = new FormData(FORM);
+
+  sendData(formData)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Ошибка отправки');
+      }
+      closeForm();
+      document.removeEventListener('keydown', onDocumentKeydown);
+      showSuccessMessage();
+    })
+    .catch(() => {
+      showErrorMessage();
+    })
+    .finally(() => {
+      unblockSubmitButton();
+    });
 });
 
 initScale();
