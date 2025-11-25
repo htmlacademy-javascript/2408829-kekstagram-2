@@ -99,5 +99,47 @@ FORM.addEventListener('submit', (evt) => {
   }
 });
 
+const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+
+function validateHashtags(value) {
+  if (!value.trim()) {
+    return true;
+  }
+
+  const hashtags = value.trim().toLowerCase().split(/\s+/);
+
+  if (hashtags.length > 5) {
+    pristine.addError(HASHTAGS_INPUT, 'Не более 5 хэштегов');
+    return false;
+  }
+
+  for (const tag of hashtags) {
+    if (!HASHTAG_REGEX.test(tag)) {
+      pristine.addError(HASHTAGS_INPUT, 'Неверный формат хэштега');
+      return false;
+    }
+  }
+
+  const unique = new Set(hashtags);
+  if (unique.size !== hashtags.length) {
+    pristine.addError(HASHTAGS_INPUT, 'Хэштеги не должны повторяться');
+    return false;
+  }
+
+  return true;
+}
+
+function validateComment(value) {
+  if (value.length > 140) {
+    pristine.addError(DESCRIPTION_INPUT, 'Комментарий не должен превышать 140 символов');
+    return false;
+  }
+  return true;
+}
+
+pristine.addValidator(HASHTAGS_INPUT, validateHashtags, '');
+pristine.addValidator(DESCRIPTION_INPUT, validateComment, '');
+
+
 initScale();
 initEffects();

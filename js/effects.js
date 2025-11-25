@@ -57,16 +57,28 @@ export const resetEffects = () => {
   }
 };
 
+const effectLevel = document.querySelector('.img-upload__effect-level');
+
 export const initEffects = () => {
   createSlider(EFFECTS.none);
+
+  effectLevel.classList.add('hidden');
 
   effectsList.addEventListener('change', (evt) => {
     if (evt.target.name === 'effect') {
       currentEffect = evt.target.value;
       const effect = EFFECTS[currentEffect];
+
+      if (currentEffect === 'none') {
+        effectLevel.classList.add('hidden');
+        preview.style.filter = '';
+      } else {
+        effectLevel.classList.remove('hidden');
+      }
       resetScale();
       createSlider(effect);
       updateEffect(effect.start);
     }
   });
 };
+
