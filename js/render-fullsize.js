@@ -15,7 +15,7 @@ const closeButton = bigPicture.querySelector('.big-picture__cancel');
 const onEscKeyDown = (evt) => {
   if (evt.key === 'Escape') {
     evt.preventDefault();
-    closeFullsizePhoto();   
+    closeFullsizePhoto();
   }
 };
 
