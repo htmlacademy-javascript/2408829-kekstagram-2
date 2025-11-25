@@ -108,7 +108,7 @@ const showSuccessMessage = () => {
     }
   };
 
-  function close() {
+  const close = () => {
     element.remove();
     document.removeEventListener('keydown', onEsc);
     document.removeEventListener('click', onClickOutside);
