@@ -13,7 +13,7 @@ const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
 const pristine = new Pristine(FORM, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'form__error'
+  errorTextClass: 'form__error',
 });
 
 const submitButtonText = SUBMIT_BUTTON.textContent;
@@ -26,6 +26,72 @@ const blockSubmitButton = () => {
 const unblockSubmitButton = () => {
   SUBMIT_BUTTON.disabled = false;
   SUBMIT_BUTTON.textContent = submitButtonText;
+};
+
+const closeSuccess = (element, onEsc, onClickOutside) => {
+  element.remove();
+  document.removeEventListener('keydown', onEsc);
+  document.removeEventListener('click', onClickOutside);
+};
+
+const closeError = (element, onEsc, onClickOutside) => {
+  element.remove();
+  document.removeEventListener('keydown', onEsc);
+  document.removeEventListener('click', onClickOutside);
+};
+
+const showSuccessMessage = () => {
+  const template = document.querySelector('#success').content.querySelector('.success');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.success__button');
+
+  const onEsc = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      closeSuccess(element, onEsc, onClickOutside);
+    }
+  };
+
+  const onClickOutside = (evt) => {
+    if (!evt.target.closest('.success__inner')) {
+      closeSuccess(element, onEsc, onClickOutside);
+    }
+  };
+
+  button.addEventListener('click', () => {
+    closeSuccess(element, onEsc, onClickOutside);
+  });
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
+};
+
+const showErrorMessage = () => {
+  const template = document.querySelector('#error').content.querySelector('.error');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.error__button');
+
+  const onEsc = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      closeError(element, onEsc, onClickOutside);
+    }
+  };
+
+  const onClickOutside = (evt) => {
+    if (!evt.target.closest('.error__inner')) {
+      closeError(element, onEsc, onClickOutside);
+    }
+  };
+
+  button.addEventListener('click', () => {
+    closeError(element, onEsc, onClickOutside);
+  });
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
 };
 
 const openForm = () => {
@@ -45,11 +111,10 @@ const closeForm = () => {
 };
 
 const onDocumentKeydown = (evt) => {
-  if (evt.key === 'Escape') {
-    const opened = document.querySelector('.success') || document.querySelector('.error');
-    if (opened) {
-      return;
-    }
+  const isMessage =
+    document.querySelector('.success') || document.querySelector('.error');
+
+  if (evt.key === 'Escape' && !isMessage) {
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
@@ -58,6 +123,7 @@ const onDocumentKeydown = (evt) => {
 
 FILE_INPUT.addEventListener('change', () => {
   const file = FILE_INPUT.files[0];
+
   if (!file) {
     return;
   }
@@ -75,14 +141,30 @@ CANCEL_BUTTON.addEventListener('click', () => {
 });
 
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
-const getHashtags = (value) => value.trim() ? value.trim().toLowerCase().split(/\s+/) : [];
 
-const isHashtagCountValid = (value) => getHashtags(value).length <= 5;
-const isHashtagFormatValid = (value) => getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
-const isHashtagUnique = (value) => {
-  const list = getHashtags(value);
-  return new Set(list).size === list.length;
+const getHashtags = (value) => {
+  if (!value.trim()) {
+    return [];
+  }
+  return value.trim().toLowerCase().split(/\s+/);
 };
+
+const isHashtagCountValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.length <= 5;
+};
+
+const isHashtagFormatValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
+};
+
+const isHashtagUnique = (value) => {
+  const hashtags = getHashtags(value);
+  const unique = new Set(hashtags);
+  return unique.size === hashtags.length;
+};
+
 const isCommentValid = (value) => value.length <= 140;
 
 pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
@@ -90,70 +172,11 @@ pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный ф
 pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
 pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
 
-const showSuccessMessage = () => {
-  const template = document.querySelector('#success').content.querySelector('.success');
-  const element = template.cloneNode(true);
-  const button = element.querySelector('.success__button');
-
-  const onEsc = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      close();
-    }
-  };
-
-  const onClickOutside = (evt) => {
-    if (!evt.target.closest('.success__inner')) {
-      close();
-    }
-  };
-
-  const close = () => {
-    element.remove();
-    document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
-  };
-
-  button.addEventListener('click', close);
-  document.body.append(element);
-  document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
-};
-
-const showErrorMessage = () => {
-  const template = document.querySelector('#error').content.querySelector('.error');
-  const element = template.cloneNode(true);
-  const button = element.querySelector('.error__button');
-
-  const onEsc = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      close();
-    }
-  };
-
-  const onClickOutside = (evt) => {
-    if (!evt.target.closest('.error__inner')) {
-      close();
-    }
-  };
-
-  const close = () => {
-    element.remove();
-    document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
-  };
-
-  button.addEventListener('click', close);
-  document.body.append(element);
-  document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
-};
-
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
 
-  if (!pristine.validate()) {
+  const isValid = pristine.validate();
+  if (!isValid) {
     return;
   }
 
@@ -166,6 +189,7 @@ FORM.addEventListener('submit', (evt) => {
       if (!response.ok) {
         throw new Error();
       }
+
       closeForm();
       document.removeEventListener('keydown', onDocumentKeydown);
       showSuccessMessage();
