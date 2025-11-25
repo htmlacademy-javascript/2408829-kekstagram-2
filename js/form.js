@@ -13,7 +13,7 @@ const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
 const pristine = new Pristine(FORM, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'form__error',
+  errorTextClass: 'form__error'
 });
 
 const submitButtonText = SUBMIT_BUTTON.textContent;
@@ -46,8 +46,8 @@ const closeForm = () => {
 
 const onDocumentKeydown = (evt) => {
   if (evt.key === 'Escape') {
-    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
-    if (messageOpen) {
+    const opened = document.querySelector('.success') || document.querySelector('.error');
+    if (opened) {
       return;
     }
     evt.preventDefault();
@@ -58,7 +58,6 @@ const onDocumentKeydown = (evt) => {
 
 FILE_INPUT.addEventListener('change', () => {
   const file = FILE_INPUT.files[0];
-
   if (!file) {
     return;
   }
@@ -76,30 +75,14 @@ CANCEL_BUTTON.addEventListener('click', () => {
 });
 
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+const getHashtags = (value) => value.trim() ? value.trim().toLowerCase().split(/\s+/) : [];
 
-const getHashtags = (value) => {
-  if (!value.trim()) {
-    return [];
-  }
-  return value.trim().toLowerCase().split(/\s+/);
-};
-
-const isHashtagCountValid = (value) => {
-  const hashtags = getHashtags(value);
-  return hashtags.length <= 5;
-};
-
-const isHashtagFormatValid = (value) => {
-  const hashtags = getHashtags(value);
-  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
-};
-
+const isHashtagCountValid = (value) => getHashtags(value).length <= 5;
+const isHashtagFormatValid = (value) => getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
 const isHashtagUnique = (value) => {
-  const hashtags = getHashtags(value);
-  const unique = new Set(hashtags);
-  return unique.size === hashtags.length;
+  const list = getHashtags(value);
+  return new Set(list).size === list.length;
 };
-
 const isCommentValid = (value) => value.length <= 140;
 
 pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
@@ -111,12 +94,6 @@ const showSuccessMessage = () => {
   const template = document.querySelector('#success').content.querySelector('.success');
   const element = template.cloneNode(true);
   const button = element.querySelector('.success__button');
-
-  const close = () => {
-    element.remove();
-    document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
-  };
 
   const onEsc = (evt) => {
     if (evt.key === 'Escape') {
@@ -131,10 +108,13 @@ const showSuccessMessage = () => {
     }
   };
 
-  button.addEventListener('click', () => {
-    close();
-  });
+  const close = () => {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  };
 
+  button.addEventListener('click', close);
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
@@ -144,12 +124,6 @@ const showErrorMessage = () => {
   const template = document.querySelector('#error').content.querySelector('.error');
   const element = template.cloneNode(true);
   const button = element.querySelector('.error__button');
-
-  const close = () => {
-    element.remove();
-    document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
-  };
 
   const onEsc = (evt) => {
     if (evt.key === 'Escape') {
@@ -164,10 +138,13 @@ const showErrorMessage = () => {
     }
   };
 
-  button.addEventListener('click', () => {
-    close();
-  });
+  const close = () => {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  };
 
+  button.addEventListener('click', close);
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
@@ -176,8 +153,7 @@ const showErrorMessage = () => {
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
 
-  const isValid = pristine.validate();
-  if (!isValid) {
+  if (!pristine.validate()) {
     return;
   }
 
@@ -188,7 +164,7 @@ FORM.addEventListener('submit', (evt) => {
   sendData(formData)
     .then((response) => {
       if (!response.ok) {
-        throw new Error('Ошибка отправки');
+        throw new Error();
       }
       closeForm();
       document.removeEventListener('keydown', onDocumentKeydown);
