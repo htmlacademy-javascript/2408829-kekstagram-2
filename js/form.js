@@ -45,15 +45,15 @@ const showSuccessMessage = () => {
   const element = template.cloneNode(true);
   const button = element.querySelector('.success__button');
 
-  const onEsc = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
+  const onClickOutside = (evt) => {
+    if (!evt.target.closest('.success__inner')) {
       closeSuccess(element, onEsc, onClickOutside);
     }
   };
 
-  const onClickOutside = (evt) => {
-    if (!evt.target.closest('.success__inner')) {
+  const onEsc = (evt) => {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
       closeSuccess(element, onEsc, onClickOutside);
     }
   };
