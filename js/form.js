@@ -18,112 +18,46 @@ const pristine = new Pristine(FORM, {
 
 const submitButtonText = SUBMIT_BUTTON.textContent;
 
-const blockSubmitButton = () => {
+function blockSubmitButton() {
   SUBMIT_BUTTON.disabled = true;
   SUBMIT_BUTTON.textContent = 'Публикую...';
-};
+}
 
-const unblockSubmitButton = () => {
+function unblockSubmitButton() {
   SUBMIT_BUTTON.disabled = false;
   SUBMIT_BUTTON.textContent = submitButtonText;
-};
+}
 
-const closeSuccess = (element, onEsc, onClickOutside) => {
-  element.remove();
-  document.removeEventListener('keydown', onEsc);
-  document.removeEventListener('click', onClickOutside);
-};
-
-const closeError = (element, onEsc, onClickOutside) => {
-  element.remove();
-  document.removeEventListener('keydown', onEsc);
-  document.removeEventListener('click', onClickOutside);
-};
-
-const showSuccessMessage = () => {
-  const template = document.querySelector('#success').content.querySelector('.success');
-  const element = template.cloneNode(true);
-  const button = element.querySelector('.success__button');
-
-  const onClickOutside = (evt) => {
-    if (!evt.target.closest('.success__inner')) {
-      closeSuccess(element, onEsc, onClickOutside);
-    }
-  };
-
-  const onEsc = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      closeSuccess(element, onEsc, onClickOutside);
-    }
-  };
-
-  button.addEventListener('click', () => {
-    closeSuccess(element, onEsc, onClickOutside);
-  });
-
-  document.body.append(element);
-  document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
-};
-
-const showErrorMessage = () => {
-  const template = document.querySelector('#error').content.querySelector('.error');
-  const element = template.cloneNode(true);
-  const button = element.querySelector('.error__button');
-
-  const onEsc = (evt) => {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      closeError(element, onEsc, onClickOutside);
-    }
-  };
-
-  const onClickOutside = (evt) => {
-    if (!evt.target.closest('.error__inner')) {
-      closeError(element, onEsc, onClickOutside);
-    }
-  };
-
-  button.addEventListener('click', () => {
-    closeError(element, onEsc, onClickOutside);
-  });
-
-  document.body.append(element);
-  document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
-};
-
-const openForm = () => {
+function openForm() {
   OVERLAY.classList.remove('hidden');
   document.body.classList.add('modal-open');
   resetScale();
   resetEffects();
-};
+}
 
-const closeForm = () => {
+function closeForm() {
   OVERLAY.classList.add('hidden');
   document.body.classList.remove('modal-open');
   FORM.reset();
   pristine.reset();
   resetScale();
   resetEffects();
-};
+}
 
-const onDocumentKeydown = (evt) => {
-  const isMessage =
-    document.querySelector('.success') || document.querySelector('.error');
-
-  if (evt.key === 'Escape' && !isMessage) {
+function onDocumentKeydown(evt) {
+  if (evt.key === 'Escape') {
+    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
+    if (messageOpen) {
+      return;
+    }
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
   }
-};
+}
 
 FILE_INPUT.addEventListener('change', () => {
   const file = FILE_INPUT.files[0];
-
   if (!file) {
     return;
   }
@@ -142,35 +76,96 @@ CANCEL_BUTTON.addEventListener('click', () => {
 
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
 
-const getHashtags = (value) => {
+function getHashtags(value) {
   if (!value.trim()) {
     return [];
   }
   return value.trim().toLowerCase().split(/\s+/);
-};
+}
 
-const isHashtagCountValid = (value) => {
+function isHashtagCountValid(value) {
+  return getHashtags(value).length <= 5;
+}
+
+function isHashtagFormatValid(value) {
+  return getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
+}
+
+function isHashtagUnique(value) {
   const hashtags = getHashtags(value);
-  return hashtags.length <= 5;
-};
+  return new Set(hashtags).size === hashtags.length;
+}
 
-const isHashtagFormatValid = (value) => {
-  const hashtags = getHashtags(value);
-  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
-};
-
-const isHashtagUnique = (value) => {
-  const hashtags = getHashtags(value);
-  const unique = new Set(hashtags);
-  return unique.size === hashtags.length;
-};
-
-const isCommentValid = (value) => value.length <= 140;
+function isCommentValid(value) {
+  return value.length <= 140;
+}
 
 pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
 pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный формат хэштега', 2, true);
 pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
 pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
+
+function showSuccessMessage() {
+  const template = document.querySelector('#success').content.querySelector('.success');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.success__button');
+
+  function close() {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  }
+
+  function onEsc(evt) {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      close();
+    }
+  }
+
+  function onClickOutside(evt) {
+    if (!evt.target.closest('.success__inner')) {
+      close();
+    }
+  }
+
+  button.addEventListener('click', close);
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
+}
+
+function showErrorMessage() {
+  const template = document.querySelector('#error').content.querySelector('.error');
+  const element = template.cloneNode(true);
+  const button = element.querySelector('.error__button');
+
+  function close() {
+    element.remove();
+    document.removeEventListener('keydown', onEsc);
+    document.removeEventListener('click', onClickOutside);
+  }
+
+  function onEsc(evt) {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      close();
+    }
+  }
+
+  function onClickOutside(evt) {
+    if (!evt.target.closest('.error__inner')) {
+      close();
+    }
+  }
+
+  button.addEventListener('click', close);
+
+  document.body.append(element);
+  document.addEventListener('keydown', onEsc);
+  document.addEventListener('click', onClickOutside);
+}
 
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
@@ -181,7 +176,6 @@ FORM.addEventListener('submit', (evt) => {
   }
 
   blockSubmitButton();
-
   const formData = new FormData(FORM);
 
   sendData(formData)
@@ -189,7 +183,6 @@ FORM.addEventListener('submit', (evt) => {
       if (!response.ok) {
         throw new Error();
       }
-
       closeForm();
       document.removeEventListener('keydown', onDocumentKeydown);
       showSuccessMessage();
