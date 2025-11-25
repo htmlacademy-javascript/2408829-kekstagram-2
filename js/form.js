@@ -140,6 +140,5 @@ function validateComment(value) {
 pristine.addValidator(HASHTAGS_INPUT, validateHashtags, '');
 pristine.addValidator(DESCRIPTION_INPUT, validateComment, '');
 
-
 initScale();
 initEffects();
