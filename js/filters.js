@@ -1,80 +1,81 @@
-import { renderThumbnails } from './render-thumbnails.js';
-
 const FILTER_DEFAULT = 'filter-default';
 const FILTER_RANDOM = 'filter-random';
 const FILTER_DISCUSSED = 'filter-discussed';
 
-const RANDOM_PHOTO_COUNT = 10;
+const RANDOM_PHOTOS_COUNT = 10;
 const DEBOUNCE_DELAY = 500;
 
-const filtersBlock = document.querySelector('.img-filters');
-const buttons = filtersBlock.querySelectorAll('.img-filters__button');
+const imgFilters = document.querySelector('.img-filters');
+const filterButtons = imgFilters.querySelectorAll('.img-filters__button');
 
-let currentPhotos = [];
-let activeFilter = FILTER_DEFAULT;
+let savedPhotos = [];
+let debounceTimer = null;
 
-const debounce = (callback, timeout = DEBOUNCE_DELAY) => {
-  let timer;
+function debounce(callback, delay) {
   return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => callback(...args), timeout);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      callback(...args);
+    }, delay);
   };
-};
+}
 
-const clearThumbnails = () => {
-  document.querySelectorAll('.picture').forEach((el) => el.remove());
-};
+function showFilters() {
+  imgFilters.classList.remove('img-filters--inactive');
+}
 
-const getRandomUnique = (photos) => {
-  const shuffled = [...photos].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, RANDOM_PHOTO_COUNT);
-};
-
-const getDiscussed = (photos) => {
-  return [...photos].sort((a, b) => b.comments.length - a.comments.length);
-};
-
-const applyFilter = () => {
-  clearThumbnails();
-
-  let filtered = [];
-
-  if (activeFilter === FILTER_DEFAULT) {
-    filtered = currentPhotos;
-  }
-
-  if (activeFilter === FILTER_RANDOM) {
-    filtered = getRandomUnique(currentPhotos);
-  }
-
-  if (activeFilter === FILTER_DISCUSSED) {
-    filtered = getDiscussed(currentPhotos);
-  }
-
-  renderThumbnails(filtered);
-};
-
-const debouncedApplyFilter = debounce(applyFilter);
-
-const onFilterClick = (evt) => {
-  if (!evt.target.classList.contains('img-filters__button')) {
-    return;
-  }
-
-  buttons.forEach((btn) => btn.classList.remove('img-filters__button--active'));
-  evt.target.classList.add('img-filters__button--active');
-
-  activeFilter = evt.target.id;
-
-  debouncedApplyFilter();
-};
-
-export const initFilters = (photos) => {
-  currentPhotos = photos;
-
-  filtersBlock.classList.remove('img-filters--inactive');
-
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', onFilterClick);
+function setActiveButton(button) {
+  filterButtons.forEach((btn) => {
+    btn.classList.remove('img-filters__button--active');
   });
-};
+  button.classList.add('img-filters__button--active');
+}
+
+function getDefaultPhotos() {
+  return savedPhotos.slice();
+}
+
+function getRandomPhotos() {
+  const shuffled = savedPhotos.slice().sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, RANDOM_PHOTOS_COUNT);
+}
+
+function getDiscussedPhotos() {
+  return savedPhotos
+    .slice()
+    .sort((a, b) => b.comments.length - a.comments.length);
+}
+
+function applyFilter(filterName) {
+  if (filterName === FILTER_DEFAULT) {
+    return getDefaultPhotos();
+  }
+  if (filterName === FILTER_RANDOM) {
+    return getRandomPhotos();
+  }
+  if (filterName === FILTER_DISCUSSED) {
+    return getDiscussedPhotos();
+  }
+  return getDefaultPhotos();
+}
+
+export function initFilters(photos, onFilterChange) {
+  savedPhotos = photos.slice();
+  showFilters();
+
+  const debouncedFilter = debounce((button) => {
+    const filteredPhotos = applyFilter(button.id);
+    onFilterChange(filteredPhotos);
+  }, DEBOUNCE_DELAY);
+
+  imgFilters.addEventListener('click', (evt) => {
+    const target = evt.target;
+
+    if (!target.classList.contains('img-filters__button')) {
+      return;
+    }
+
+    setActiveButton(target);
+    debouncedFilter(target);
+  });
+}

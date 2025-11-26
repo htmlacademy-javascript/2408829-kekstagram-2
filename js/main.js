@@ -1,16 +1,22 @@
 import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
-import { initFilters } from './filters.js';
+import { initFilters, updateFilteredPictures } from './filters.js';
 import './form.js';
 
+const picturesContainer = document.querySelector('.pictures');
+const imgFilters = document.querySelector('.img-filters');
+
+let photos = [];
 
 getData()
-  .then((photos) => {
-    renderThumbnails(photos);
-    initFilters(photos);
+  .then((data) => {
+    photos = data;
 
-    const picturesContainer = document.querySelector('.pictures');
+    renderThumbnails(photos);
+
+    imgFilters.classList.remove('img-filters--inactive');
+    initFilters(photos, updateFilteredPictures);
 
     picturesContainer.addEventListener('click', (evt) => {
       const picture = evt.target.closest('.picture');
@@ -19,14 +25,14 @@ getData()
       }
 
       const index = picture.dataset.index;
-      if (index !== undefined) {
-        openFullsizePhoto(photos[+index]);
-      }
+      openFullsizePhoto(photos[Number(index)]);
     });
   })
   .catch(() => {
-    const errorTemplate = document
+    const template = document
       .querySelector('#data-error')
       .content.querySelector('.data-error');
-    document.body.append(errorTemplate.cloneNode(true));
+    const element = template.cloneNode(true);
+    document.body.append(element);
+    setTimeout(() => element.remove(), 5000);
   });
