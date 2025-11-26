@@ -8,25 +8,20 @@ const OVERLAY = document.querySelector('.img-upload__overlay');
 const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
 const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
 const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
-const EFFECT_LEVEL = document.querySelector('.img-upload__effect-level');
+const PREVIEW = document.querySelector('.img-upload__preview img');
+const EFFECTS_PREVIEW = document.querySelectorAll('.effects__preview');
+
 const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
+const SUBMIT_TEXT = SUBMIT_BUTTON.textContent;
 
-const pristine = new Pristine(FORM, {
-  classTo: 'img-upload__field-wrapper',
-  errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'form__error',
-});
-
-const submitText = SUBMIT_BUTTON.textContent;
-
-function blockSubmitButton() {
+function blockSubmit() {
   SUBMIT_BUTTON.disabled = true;
   SUBMIT_BUTTON.textContent = 'Публикую...';
 }
 
-function unblockSubmitButton() {
+function unblockSubmit() {
   SUBMIT_BUTTON.disabled = false;
-  SUBMIT_BUTTON.textContent = submitText;
+  SUBMIT_BUTTON.textContent = SUBMIT_TEXT;
 }
 
 function openForm() {
@@ -34,7 +29,6 @@ function openForm() {
   document.body.classList.add('modal-open');
   resetScale();
   resetEffects();
-  EFFECT_LEVEL.classList.add('hidden');
 }
 
 function closeForm() {
@@ -44,15 +38,15 @@ function closeForm() {
   pristine.reset();
   resetScale();
   resetEffects();
-  EFFECT_LEVEL.classList.add('hidden');
 }
 
 function onDocumentKeydown(evt) {
-  const shown = document.querySelector('.success') || document.querySelector('.error');
-  if (shown) {
-    return;
-  }
-  if (evt.key === 'Escape') {
+  const message = document.querySelector('.success') || document.querySelector('.error');
+  if (message) return;
+
+  if (evt.key === 'Escape' &&
+      document.activeElement !== HASHTAGS_INPUT &&
+      document.activeElement !== DESCRIPTION_INPUT) {
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
@@ -61,11 +55,15 @@ function onDocumentKeydown(evt) {
 
 FILE_INPUT.addEventListener('change', () => {
   const file = FILE_INPUT.files[0];
-  if (!file) {
-    return;
-  }
-  const preview = document.querySelector('.img-upload__preview img');
-  preview.src = URL.createObjectURL(file);
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  PREVIEW.src = url;
+
+  EFFECTS_PREVIEW.forEach((item) => {
+    item.style.backgroundImage = `url(${url})`;
+  });
+
   openForm();
   document.addEventListener('keydown', onDocumentKeydown);
 });
@@ -75,124 +73,109 @@ CANCEL_BUTTON.addEventListener('click', () => {
   document.removeEventListener('keydown', onDocumentKeydown);
 });
 
+const pristine = new Pristine(FORM, {
+  classTo: 'img-upload__field-wrapper',
+  errorTextParent: 'img-upload__field-wrapper',
+  errorTextClass: 'form__error'
+});
+
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
 
 function getHashtags(value) {
-  if (!value.trim()) {
-    return [];
-  }
-  return value.trim().toLowerCase().split(/\s+/);
+  return value.trim().toLowerCase() ? value.trim().toLowerCase().split(/\s+/) : [];
 }
 
-function isHashtagCountValid(value) {
-  const hashtags = getHashtags(value);
-  return hashtags.length <= 5;
+function isCountValid(value) {
+  return getHashtags(value).length <= 5;
 }
 
-function isHashtagFormatValid(value) {
-  const hashtags = getHashtags(value);
-  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
+function isFormatValid(value) {
+  return getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
 }
 
-function isHashtagUnique(value) {
-  const hashtags = getHashtags(value);
-  const unique = new Set(hashtags);
-  return unique.size === hashtags.length;
+function isUnique(value) {
+  const tags = getHashtags(value);
+  return new Set(tags).size === tags.length;
 }
 
-function isCommentValid(value) {
+function validateComment(value) {
   return value.length <= 140;
 }
 
-pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
-pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный формат хэштега', 2, true);
-pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
-pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
+pristine.addValidator(HASHTAGS_INPUT, isCountValid, 'Не более 5 хэштегов', 1, true);
+pristine.addValidator(HASHTAGS_INPUT, isFormatValid, 'Неверный формат хэштега', 2, true);
+pristine.addValidator(HASHTAGS_INPUT, isUnique, 'Хэштеги не должны повторяться', 3, true);
+pristine.addValidator(DESCRIPTION_INPUT, validateComment, 'Комментарий не должен превышать 140 символов');
 
-function showSuccessMessage() {
+function showSuccess() {
   const template = document.querySelector('#success').content.querySelector('.success');
   const element = template.cloneNode(true);
-  const button = element.querySelector('.success__button');
 
   function close() {
     element.remove();
     document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
+    document.removeEventListener('click', onOutside);
   }
 
   function onEsc(evt) {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      close();
-    }
+    if (evt.key === 'Escape') close();
   }
 
-  function onClickOutside(evt) {
-    if (!evt.target.closest('.success__inner')) {
-      close();
-    }
+  function onOutside(evt) {
+    if (!evt.target.closest('.success__inner')) close();
   }
 
-  button.addEventListener('click', () => close());
+  element.querySelector('.success__button').addEventListener('click', close);
+
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
+  document.addEventListener('click', onOutside);
 }
 
-function showErrorMessage() {
+function showError() {
   const template = document.querySelector('#error').content.querySelector('.error');
   const element = template.cloneNode(true);
-  const button = element.querySelector('.error__button');
 
   function close() {
     element.remove();
     document.removeEventListener('keydown', onEsc);
-    document.removeEventListener('click', onClickOutside);
+    document.removeEventListener('click', onOutside);
   }
 
   function onEsc(evt) {
-    if (evt.key === 'Escape') {
-      evt.preventDefault();
-      close();
-    }
+    if (evt.key === 'Escape') close();
   }
 
-  function onClickOutside(evt) {
-    if (!evt.target.closest('.error__inner')) {
-      close();
-    }
+  function onOutside(evt) {
+    if (!evt.target.closest('.error__inner')) close();
   }
 
-  button.addEventListener('click', () => close());
+  element.querySelector('.error__button').addEventListener('click', close);
+
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
-  document.addEventListener('click', onClickOutside);
+  document.addEventListener('click', onOutside);
 }
 
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
-  const isValid = pristine.validate();
-  if (!isValid) {
-    return;
-  }
 
-  blockSubmitButton();
+  if (!pristine.validate()) return;
+
+  blockSubmit();
+
   const formData = new FormData(FORM);
 
   sendData(formData)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error();
-      }
+    .then(() => {
       closeForm();
-      document.removeEventListener('keydown', onDocumentKeydown);
-      showSuccessMessage();
+      showSuccess();
     })
     .catch(() => {
-      showErrorMessage();
+      showError();
     })
     .finally(() => {
-      unblockSubmitButton();
+      unblockSubmit();
     });
 });
 

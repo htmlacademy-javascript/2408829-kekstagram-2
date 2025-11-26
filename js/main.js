@@ -1,11 +1,14 @@
 import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
+import { initFilters } from './filters.js';
 import './form.js';
+
 
 getData()
   .then((photos) => {
     renderThumbnails(photos);
+    initFilters(photos);
 
     const picturesContainer = document.querySelector('.pictures');
 
