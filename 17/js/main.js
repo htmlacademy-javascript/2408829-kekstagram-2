@@ -1,22 +1,14 @@
 import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
-import { initFilters, updateFilteredPictures } from './filters.js';
 import './form.js';
-
-const picturesContainer = document.querySelector('.pictures');
-const imgFilters = document.querySelector('.img-filters');
-
-let photos = [];
+import './filters.js';
 
 getData()
-  .then((data) => {
-    photos = data;
-
+  .then((photos) => {
     renderThumbnails(photos);
 
-    imgFilters.classList.remove('img-filters--inactive');
-    initFilters(photos, updateFilteredPictures);
+    const picturesContainer = document.querySelector('.pictures');
 
     picturesContainer.addEventListener('click', (evt) => {
       const picture = evt.target.closest('.picture');
@@ -24,14 +16,15 @@ getData()
         return;
       }
 
-      const index = picture.dataset.index;
-      openFullsizePhoto(photos[Number(index)]);
+      const index = Number(picture.dataset.index);
+      openFullsizePhoto(photos[index]);
     });
+
+    const imgFilters = document.querySelector('.img-filters');
+    imgFilters.classList.remove('img-filters--inactive');
   })
   .catch(() => {
-    const template = document
-      .querySelector('#data-error')
-      .content.querySelector('.data-error');
+    const template = document.querySelector('#data-error').content.querySelector('.data-error');
     const element = template.cloneNode(true);
     document.body.append(element);
     setTimeout(() => element.remove(), 5000);
