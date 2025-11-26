@@ -8,6 +8,7 @@ const OVERLAY = document.querySelector('.img-upload__overlay');
 const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
 const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
 const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
+const EFFECT_LEVEL = document.querySelector('.img-upload__effect-level');
 const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
 
 const pristine = new Pristine(FORM, {
@@ -16,7 +17,7 @@ const pristine = new Pristine(FORM, {
   errorTextClass: 'form__error',
 });
 
-const submitButtonText = SUBMIT_BUTTON.textContent;
+const submitText = SUBMIT_BUTTON.textContent;
 
 function blockSubmitButton() {
   SUBMIT_BUTTON.disabled = true;
@@ -25,7 +26,7 @@ function blockSubmitButton() {
 
 function unblockSubmitButton() {
   SUBMIT_BUTTON.disabled = false;
-  SUBMIT_BUTTON.textContent = submitButtonText;
+  SUBMIT_BUTTON.textContent = submitText;
 }
 
 function openForm() {
@@ -33,6 +34,7 @@ function openForm() {
   document.body.classList.add('modal-open');
   resetScale();
   resetEffects();
+  EFFECT_LEVEL.classList.add('hidden');
 }
 
 function closeForm() {
@@ -42,14 +44,15 @@ function closeForm() {
   pristine.reset();
   resetScale();
   resetEffects();
+  EFFECT_LEVEL.classList.add('hidden');
 }
 
 function onDocumentKeydown(evt) {
+  const shown = document.querySelector('.success') || document.querySelector('.error');
+  if (shown) {
+    return;
+  }
   if (evt.key === 'Escape') {
-    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
-    if (messageOpen) {
-      return;
-    }
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
@@ -61,10 +64,8 @@ FILE_INPUT.addEventListener('change', () => {
   if (!file) {
     return;
   }
-
   const preview = document.querySelector('.img-upload__preview img');
   preview.src = URL.createObjectURL(file);
-
   openForm();
   document.addEventListener('keydown', onDocumentKeydown);
 });
@@ -84,16 +85,19 @@ function getHashtags(value) {
 }
 
 function isHashtagCountValid(value) {
-  return getHashtags(value).length <= 5;
+  const hashtags = getHashtags(value);
+  return hashtags.length <= 5;
 }
 
 function isHashtagFormatValid(value) {
-  return getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
+  const hashtags = getHashtags(value);
+  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
 }
 
 function isHashtagUnique(value) {
   const hashtags = getHashtags(value);
-  return new Set(hashtags).size === hashtags.length;
+  const unique = new Set(hashtags);
+  return unique.size === hashtags.length;
 }
 
 function isCommentValid(value) {
@@ -129,8 +133,7 @@ function showSuccessMessage() {
     }
   }
 
-  button.addEventListener('click', close);
-
+  button.addEventListener('click', () => close());
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
@@ -160,8 +163,7 @@ function showErrorMessage() {
     }
   }
 
-  button.addEventListener('click', close);
-
+  button.addEventListener('click', () => close());
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
@@ -169,7 +171,6 @@ function showErrorMessage() {
 
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
-
   const isValid = pristine.validate();
   if (!isValid) {
     return;
