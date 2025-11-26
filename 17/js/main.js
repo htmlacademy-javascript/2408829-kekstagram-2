@@ -2,26 +2,26 @@ import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
 import { openFullsizePhoto } from './render-fullsize.js';
 import './form.js';
-import './filters.js';
+import { initFilters } from './filters.js';
 
 getData()
   .then((photos) => {
     renderThumbnails(photos);
 
-    const picturesContainer = document.querySelector('.pictures');
+    initFilters(photos);
 
-    picturesContainer.addEventListener('click', (evt) => {
+    const container = document.querySelector('.pictures');
+
+    container.addEventListener('click', (evt) => {
       const picture = evt.target.closest('.picture');
       if (!picture) {
         return;
       }
-
-      const index = Number(picture.dataset.index);
-      openFullsizePhoto(photos[index]);
+      const index = picture.dataset.index;
+      if (index !== undefined) {
+        openFullsizePhoto(photos[index]);
+      }
     });
-
-    const imgFilters = document.querySelector('.img-filters');
-    imgFilters.classList.remove('img-filters--inactive');
   })
   .catch(() => {
     const template = document.querySelector('#data-error').content.querySelector('.data-error');
