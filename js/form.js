@@ -9,67 +9,90 @@ const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
 const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
 const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
 const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
+const PREVIEW_IMG = document.querySelector('.img-upload__preview img');
+const EFFECTS_PREVIEWS = document.querySelectorAll('.effects__preview');
 
 const pristine = new Pristine(FORM, {
   classTo: 'img-upload__field-wrapper',
   errorTextParent: 'img-upload__field-wrapper',
-  errorTextClass: 'form__error'
+  errorTextClass: 'form__error',
 });
+
+const submitButtonText = SUBMIT_BUTTON.textContent;
 
 const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
 
-function getHashtags(value) {
-  return value.trim() ? value.trim().toLowerCase().split(/\s+/) : [];
-}
+const getHashtags = (value) => {
+  if (!value.trim()) {
+    return [];
+  }
+  return value.trim().toLowerCase().split(/\s+/);
+};
 
-function isHashtagCountValid(value) {
-  return getHashtags(value).length <= 5;
-}
+const isHashtagCountValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.length <= 5;
+};
 
-function isHashtagFormatValid(value) {
-  return getHashtags(value).every((tag) => HASHTAG_REGEX.test(tag));
-}
+const isHashtagFormatValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
+};
 
-function isHashtagUnique(value) {
-  const tags = getHashtags(value);
-  return new Set(tags).size === tags.length;
-}
+const isHashtagUnique = (value) => {
+  const hashtags = getHashtags(value);
+  const unique = new Set(hashtags);
+  return unique.size === hashtags.length;
+};
 
-function isCommentValid(value) {
-  return value.length <= 140;
-}
+const isCommentValid = (value) => value.length <= 140;
 
 pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
 pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный формат хэштега', 2, true);
 pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
 pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
 
-function blockSubmitButton() {
+const blockSubmitButton = () => {
   SUBMIT_BUTTON.disabled = true;
   SUBMIT_BUTTON.textContent = 'Публикую...';
-}
+};
 
-function unblockSubmitButton() {
+const unblockSubmitButton = () => {
   SUBMIT_BUTTON.disabled = false;
-  SUBMIT_BUTTON.textContent = 'Опубликовать';
-}
+  SUBMIT_BUTTON.textContent = submitButtonText;
+};
 
-function closeForm() {
+const resetPreview = () => {
+  PREVIEW_IMG.src = 'img/upload-default-image.jpg';
+  EFFECTS_PREVIEWS.forEach((preview) => {
+    preview.style.backgroundImage = '';
+  });
+};
+
+const openForm = () => {
+  OVERLAY.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  resetScale();
+  resetEffects();
+};
+
+const closeForm = () => {
   OVERLAY.classList.add('hidden');
   document.body.classList.remove('modal-open');
   FORM.reset();
   pristine.reset();
   resetScale();
   resetEffects();
-}
+  resetPreview();
+};
+
+const isTextFieldFocused = () =>
+  document.activeElement === HASHTAGS_INPUT || document.activeElement === DESCRIPTION_INPUT;
 
 function onDocumentKeydown(evt) {
   if (evt.key === 'Escape') {
-    const openMessage = document.querySelector('.success') || document.querySelector('.error');
-    if (openMessage) {
-      return;
-    }
-    if (document.activeElement === HASHTAGS_INPUT || document.activeElement === DESCRIPTION_INPUT) {
+    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
+    if (messageOpen || isTextFieldFocused()) {
       return;
     }
     evt.preventDefault();
@@ -78,10 +101,32 @@ function onDocumentKeydown(evt) {
   }
 }
 
-function showSuccessMessage() {
+FILE_INPUT.addEventListener('change', () => {
+  const file = FILE_INPUT.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const fileUrl = URL.createObjectURL(file);
+  PREVIEW_IMG.src = fileUrl;
+  EFFECTS_PREVIEWS.forEach((preview) => {
+    preview.style.backgroundImage = `url(${fileUrl})`;
+  });
+
+  openForm();
+  document.addEventListener('keydown', onDocumentKeydown);
+});
+
+CANCEL_BUTTON.addEventListener('click', () => {
+  closeForm();
+  document.removeEventListener('keydown', onDocumentKeydown);
+});
+
+const showSuccessMessage = () => {
   const template = document.querySelector('#success').content.querySelector('.success');
   const element = template.cloneNode(true);
-  document.body.append(element);
+  const button = element.querySelector('.success__button');
 
   function close() {
     element.remove();
@@ -102,15 +147,19 @@ function showSuccessMessage() {
     }
   }
 
-  element.querySelector('.success__button').addEventListener('click', close);
+  button.addEventListener('click', () => {
+    close();
+  });
+
+  document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
-}
+};
 
-function showErrorMessage() {
+const showErrorMessage = () => {
   const template = document.querySelector('#error').content.querySelector('.error');
   const element = template.cloneNode(true);
-  document.body.append(element);
+  const button = element.querySelector('.error__button');
 
   function close() {
     element.remove();
@@ -131,51 +180,34 @@ function showErrorMessage() {
     }
   }
 
-  element.querySelector('.error__button').addEventListener('click', close);
+  button.addEventListener('click', () => {
+    close();
+  });
+
+  document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
-}
-
-function openForm() {
-  OVERLAY.classList.remove('hidden');
-  document.body.classList.add('modal-open');
-  resetScale();
-  resetEffects();
-}
-
-FILE_INPUT.addEventListener('change', () => {
-  const file = FILE_INPUT.files[0];
-  if (!file) {
-    return;
-  }
-
-  const preview = document.querySelector('.img-upload__preview img');
-  preview.src = URL.createObjectURL(file);
-
-  openForm();
-  document.addEventListener('keydown', onDocumentKeydown);
-});
-
-CANCEL_BUTTON.addEventListener('click', () => {
-  closeForm();
-  document.removeEventListener('keydown', onDocumentKeydown);
-});
+};
 
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
 
-  if (!pristine.validate()) {
+  const isValid = pristine.validate();
+  if (!isValid) {
     return;
   }
 
   blockSubmitButton();
 
-  sendData(new FormData(FORM))
+  const formData = new FormData(FORM);
+
+  sendData(formData)
     .then((response) => {
       if (!response.ok) {
-        throw new Error();
+        throw new Error('Ошибка отправки');
       }
       closeForm();
+      document.removeEventListener('keydown', onDocumentKeydown);
       showSuccessMessage();
     })
     .catch(() => {
