@@ -1,84 +1,65 @@
 import { renderThumbnails } from './render-thumbnails.js';
 
-const FILTER_DEFAULT = 'filter-default';
-const FILTER_RANDOM = 'filter-random';
-const FILTER_DISCUSSED = 'filter-discussed';
-const RANDOM_PHOTOS_COUNT = 10;
+const FILTER_DEFAULT = 'default';
+const FILTER_RANDOM = 'random';
+const FILTER_DISCUSSED = 'discussed';
+
+const RANDOM_COUNT = 10;
 const DEBOUNCE_DELAY = 500;
 
-const filtersBlock = document.querySelector('.img-filters');
-const filtersForm = filtersBlock.querySelector('.img-filters__form');
-const filterButtons = filtersForm.querySelectorAll('.img-filters__button');
+const imgFilters = document.querySelector('.img-filters');
+const filterButtons = imgFilters.querySelectorAll('.img-filters__button');
 
 let originalPhotos = [];
-let isInitialized = false;
 
-const debounce = (callback, timeoutDelay = DEBOUNCE_DELAY) => {
-  let timeoutId;
+const debounce = (callback, timeout) => {
+  let timer;
   return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => callback(...args), timeoutDelay);
+    clearTimeout(timer);
+    timer = setTimeout(() => callback(...args), timeout);
   };
 };
 
-const clearThumbnails = () => {
-  const pictures = document.querySelectorAll('.picture');
-  pictures.forEach((picture) => picture.remove());
-};
-
-const getRandomPhotos = (photos) => {
-  const copy = photos.slice();
+const getRandomUnique = (array) => {
+  const copy = array.slice();
   const result = [];
-
-  const count = Math.min(RANDOM_PHOTOS_COUNT, copy.length);
-
-  while (result.length < count) {
-    const randomIndex = Math.floor(Math.random() * copy.length);
-    const [item] = copy.splice(randomIndex, 1);
-    result.push(item);
+  while (result.length < RANDOM_COUNT && copy.length > 0) {
+    const index = Math.floor(Math.random() * copy.length);
+    result.push(copy[index]);
+    copy.splice(index, 1);
   }
-
   return result;
 };
 
-const getDiscussedPhotos = (photos) => photos.slice().sort((a, b) => b.comments.length - a.comments.length);
+const getDiscussed = (array) => array.slice().sort((a, b) => b.comments.length - a.comments.length);
 
-const applyFilter = (filterId) => {
-  clearThumbnails();
-
-  let photosToRender = originalPhotos;
-
-  if (filterId === FILTER_RANDOM) {
-    photosToRender = getRandomPhotos(originalPhotos);
-  }
-
-  if (filterId === FILTER_DISCUSSED) {
-    photosToRender = getDiscussedPhotos(originalPhotos);
-  }
-
-  renderThumbnails(photosToRender);
+const updatePictures = (photos) => {
+  document.querySelectorAll('.picture').forEach((el) => el.remove());
+  renderThumbnails(photos);
 };
 
-const debouncedApplyFilter = debounce(applyFilter);
+const applyFilter = (filter) => {
+  if (filter === FILTER_DEFAULT) {
+    updatePictures(originalPhotos);
+  } else if (filter === FILTER_RANDOM) {
+    updatePictures(getRandomUnique(originalPhotos));
+  } else if (filter === FILTER_DISCUSSED) {
+    updatePictures(getDiscussed(originalPhotos));
+  }
+};
+
+const debouncedFilter = debounce(applyFilter, DEBOUNCE_DELAY);
 
 export const initFilters = (photos) => {
-  if (isInitialized) {
-    return;
-  }
+  originalPhotos = photos;
 
-  isInitialized = true;
-  originalPhotos = photos.slice();
+  imgFilters.classList.remove('img-filters--inactive');
 
-  filtersBlock.classList.remove('img-filters--inactive');
-
-  filtersForm.addEventListener('click', (evt) => {
-    if (!evt.target.classList.contains('img-filters__button')) {
-      return;
-    }
-
-    filterButtons.forEach((button) => button.classList.remove('img-filters__button--active'));
-    evt.target.classList.add('img-filters__button--active');
-
-    debouncedApplyFilter(evt.target.id);
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      filterButtons.forEach((btn) => btn.classList.remove('img-filters__button--active'));
+      button.classList.add('img-filters__button--active');
+      debouncedFilter(button.id.replace('filter-', ''));
+    });
   });
 };
