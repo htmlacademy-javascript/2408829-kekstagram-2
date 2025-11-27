@@ -1,29 +1,23 @@
 import { getData } from './data.js';
 import { renderThumbnails } from './render-thumbnails.js';
-import { openFullsizePhoto } from './render-fullsize.js';
+import { initFilters } from './filters.js';
 import './form.js';
+
+const showDataError = () => {
+  const template = document.querySelector('#data-error').content.querySelector('.data-error');
+  const element = template.cloneNode(true);
+  document.body.append(element);
+
+  setTimeout(() => {
+    element.remove();
+  }, 5000);
+};
 
 getData()
   .then((photos) => {
     renderThumbnails(photos);
-
-    const picturesContainer = document.querySelector('.pictures');
-
-    picturesContainer.addEventListener('click', (evt) => {
-      const picture = evt.target.closest('.picture');
-      if (!picture) {
-        return;
-      }
-
-      const index = picture.dataset.index;
-      if (index !== undefined) {
-        openFullsizePhoto(photos[+index]);
-      }
-    });
+    initFilters(photos);
   })
   .catch(() => {
-    const errorTemplate = document
-      .querySelector('#data-error')
-      .content.querySelector('.data-error');
-    document.body.append(errorTemplate.cloneNode(true));
+    showDataError();
   });

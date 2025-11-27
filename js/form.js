@@ -8,8 +8,9 @@ const OVERLAY = document.querySelector('.img-upload__overlay');
 const CANCEL_BUTTON = FORM.querySelector('.img-upload__cancel');
 const HASHTAGS_INPUT = FORM.querySelector('.text__hashtags');
 const DESCRIPTION_INPUT = FORM.querySelector('.text__description');
-const EFFECT_LEVEL = document.querySelector('.img-upload__effect-level');
 const SUBMIT_BUTTON = FORM.querySelector('.img-upload__submit');
+const PREVIEW_IMG = document.querySelector('.img-upload__preview img');
+const EFFECTS_PREVIEWS = document.querySelectorAll('.effects__preview');
 
 const pristine = new Pristine(FORM, {
   classTo: 'img-upload__field-wrapper',
@@ -17,42 +18,83 @@ const pristine = new Pristine(FORM, {
   errorTextClass: 'form__error',
 });
 
-const submitText = SUBMIT_BUTTON.textContent;
+const submitButtonText = SUBMIT_BUTTON.textContent;
 
-function blockSubmitButton() {
+const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
+
+const getHashtags = (value) => {
+  if (!value.trim()) {
+    return [];
+  }
+  return value.trim().toLowerCase().split(/\s+/);
+};
+
+const isHashtagCountValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.length <= 5;
+};
+
+const isHashtagFormatValid = (value) => {
+  const hashtags = getHashtags(value);
+  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
+};
+
+const isHashtagUnique = (value) => {
+  const hashtags = getHashtags(value);
+  const unique = new Set(hashtags);
+  return unique.size === hashtags.length;
+};
+
+const isCommentValid = (value) => value.length <= 140;
+
+pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
+pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный формат хэштега', 2, true);
+pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
+pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
+
+const blockSubmitButton = () => {
   SUBMIT_BUTTON.disabled = true;
   SUBMIT_BUTTON.textContent = 'Публикую...';
-}
+};
 
-function unblockSubmitButton() {
+const unblockSubmitButton = () => {
   SUBMIT_BUTTON.disabled = false;
-  SUBMIT_BUTTON.textContent = submitText;
-}
+  SUBMIT_BUTTON.textContent = submitButtonText;
+};
 
-function openForm() {
+const resetPreview = () => {
+  PREVIEW_IMG.src = 'img/upload-default-image.jpg';
+  EFFECTS_PREVIEWS.forEach((preview) => {
+    preview.style.backgroundImage = '';
+  });
+};
+
+const openForm = () => {
   OVERLAY.classList.remove('hidden');
   document.body.classList.add('modal-open');
   resetScale();
   resetEffects();
-  EFFECT_LEVEL.classList.add('hidden');
-}
+};
 
-function closeForm() {
+const closeForm = () => {
   OVERLAY.classList.add('hidden');
   document.body.classList.remove('modal-open');
   FORM.reset();
   pristine.reset();
   resetScale();
   resetEffects();
-  EFFECT_LEVEL.classList.add('hidden');
-}
+  resetPreview();
+};
+
+const isTextFieldFocused = () =>
+  document.activeElement === HASHTAGS_INPUT || document.activeElement === DESCRIPTION_INPUT;
 
 function onDocumentKeydown(evt) {
-  const shown = document.querySelector('.success') || document.querySelector('.error');
-  if (shown) {
-    return;
-  }
   if (evt.key === 'Escape') {
+    const messageOpen = document.querySelector('.success') || document.querySelector('.error');
+    if (messageOpen || isTextFieldFocused()) {
+      return;
+    }
     evt.preventDefault();
     closeForm();
     document.removeEventListener('keydown', onDocumentKeydown);
@@ -61,11 +103,17 @@ function onDocumentKeydown(evt) {
 
 FILE_INPUT.addEventListener('change', () => {
   const file = FILE_INPUT.files[0];
+
   if (!file) {
     return;
   }
-  const preview = document.querySelector('.img-upload__preview img');
-  preview.src = URL.createObjectURL(file);
+
+  const fileUrl = URL.createObjectURL(file);
+  PREVIEW_IMG.src = fileUrl;
+  EFFECTS_PREVIEWS.forEach((preview) => {
+    preview.style.backgroundImage = `url(${fileUrl})`;
+  });
+
   openForm();
   document.addEventListener('keydown', onDocumentKeydown);
 });
@@ -75,41 +123,7 @@ CANCEL_BUTTON.addEventListener('click', () => {
   document.removeEventListener('keydown', onDocumentKeydown);
 });
 
-const HASHTAG_REGEX = /^#[a-zа-яё0-9]{1,19}$/i;
-
-function getHashtags(value) {
-  if (!value.trim()) {
-    return [];
-  }
-  return value.trim().toLowerCase().split(/\s+/);
-}
-
-function isHashtagCountValid(value) {
-  const hashtags = getHashtags(value);
-  return hashtags.length <= 5;
-}
-
-function isHashtagFormatValid(value) {
-  const hashtags = getHashtags(value);
-  return hashtags.every((tag) => HASHTAG_REGEX.test(tag));
-}
-
-function isHashtagUnique(value) {
-  const hashtags = getHashtags(value);
-  const unique = new Set(hashtags);
-  return unique.size === hashtags.length;
-}
-
-function isCommentValid(value) {
-  return value.length <= 140;
-}
-
-pristine.addValidator(HASHTAGS_INPUT, isHashtagCountValid, 'Не более 5 хэштегов', 1, true);
-pristine.addValidator(HASHTAGS_INPUT, isHashtagFormatValid, 'Неверный формат хэштега', 2, true);
-pristine.addValidator(HASHTAGS_INPUT, isHashtagUnique, 'Хэштеги не должны повторяться', 3, true);
-pristine.addValidator(DESCRIPTION_INPUT, isCommentValid, 'Комментарий не должен превышать 140 символов');
-
-function showSuccessMessage() {
+const showSuccessMessage = () => {
   const template = document.querySelector('#success').content.querySelector('.success');
   const element = template.cloneNode(true);
   const button = element.querySelector('.success__button');
@@ -133,13 +147,16 @@ function showSuccessMessage() {
     }
   }
 
-  button.addEventListener('click', () => close());
+  button.addEventListener('click', () => {
+    close();
+  });
+
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
-}
+};
 
-function showErrorMessage() {
+const showErrorMessage = () => {
   const template = document.querySelector('#error').content.querySelector('.error');
   const element = template.cloneNode(true);
   const button = element.querySelector('.error__button');
@@ -163,26 +180,31 @@ function showErrorMessage() {
     }
   }
 
-  button.addEventListener('click', () => close());
+  button.addEventListener('click', () => {
+    close();
+  });
+
   document.body.append(element);
   document.addEventListener('keydown', onEsc);
   document.addEventListener('click', onClickOutside);
-}
+};
 
 FORM.addEventListener('submit', (evt) => {
   evt.preventDefault();
+
   const isValid = pristine.validate();
   if (!isValid) {
     return;
   }
 
   blockSubmitButton();
+
   const formData = new FormData(FORM);
 
   sendData(formData)
     .then((response) => {
       if (!response.ok) {
-        throw new Error();
+        throw new Error('Ошибка отправки');
       }
       closeForm();
       document.removeEventListener('keydown', onDocumentKeydown);
