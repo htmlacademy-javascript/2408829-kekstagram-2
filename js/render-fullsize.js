@@ -1,3 +1,5 @@
+const COMMENTS_PER_PORTION = 5;
+
 const bigPicture = document.querySelector('.big-picture');
 const body = document.body;
 
@@ -11,8 +13,6 @@ const pictureCaption = bigPicture.querySelector('.social__caption');
 const commentCountBlock = bigPicture.querySelector('.social__comment-count');
 const commentsLoader = bigPicture.querySelector('.comments-loader');
 const closeButton = bigPicture.querySelector('.big-picture__cancel');
-
-const COMMENTS_PER_PORTION = 5;
 
 let currentComments = [];
 let shownCommentsCount = 0;
@@ -41,8 +41,8 @@ const updateCommentsView = () => {
   const fragment = document.createDocumentFragment();
   const nextCount = Math.min(currentComments.length, shownCommentsCount + COMMENTS_PER_PORTION);
 
-  for (let i = shownCommentsCount; i < nextCount; i++) {
-    fragment.appendChild(createCommentElement(currentComments[i]));
+  for (let index = shownCommentsCount; index < nextCount; index++) {
+    fragment.appendChild(createCommentElement(currentComments[index]));
   }
 
   commentsContainer.appendChild(fragment);
@@ -52,7 +52,7 @@ const updateCommentsView = () => {
   commentShownCount.textContent = shownCommentsCount;
   commentTotalCount.textContent = currentComments.length;
 
-  if (shownCommentsCount >= currentComments.length) {
+  if (shownCommentsCount >= currentComments.length || currentComments.length === 0) {
     commentsLoader.classList.add('hidden');
   } else {
     commentsLoader.classList.remove('hidden');
@@ -60,7 +60,6 @@ const updateCommentsView = () => {
 
   if (currentComments.length === 0) {
     commentCountBlock.classList.add('hidden');
-    commentsLoader.classList.add('hidden');
   } else {
     commentCountBlock.classList.remove('hidden');
   }
